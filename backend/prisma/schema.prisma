@@ -1,0 +1,69 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+
+model Utilisateur{
+  id Int @id @default(autoincrement())
+  nom String
+  email String @unique
+  motDePasse String
+  role  Role @default(EMPLOYE)
+  actif      Boolean  @default(true)
+  entrepriseId Int?
+  entreprise Entreprise? @relation(fields: [entrepriseId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Entreprise {
+  id Int @id @default(autoincrement())
+  nom String
+  logo String?
+  adresse String
+  devise String @default("XOF")
+  typePeriode TypePeriode @default(MENSUELLE)
+  utilisateurs Utilisateur[]
+  employes Employe[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Employe {
+  id Int @id @default(autoincrement())
+  nomComplet String
+  poste String
+  typeContrat TypeContrat
+  tauxSalaire Float
+  coordonneesBancaires String?
+  actif Boolean @default(true)
+  entrepriseId Int
+  entreprise Entreprise @relation(fields: [entrepriseId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum Role{
+  SUPER_ADMIN
+  ADMIN
+  CAISSIER
+  EMPLOYE
+}
+
+enum TypePeriode {
+  MENSUELLE
+  HEBDOMADAIRE
+  JOURNALIERE
+}
+
+enum TypeContrat {
+  JOURNALIER
+  FIXE
+  HONORAIRE
+}
