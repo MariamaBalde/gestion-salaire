@@ -1,47 +1,62 @@
 import { EntrepriseService } from "../service/EntrepriseService.js";
 export class EntrepriseController {
     entrepriseService = new EntrepriseService();
+    // 🔹 Créer une entreprise
     async create(req, res) {
         try {
-            const { nom, logo, adresse, devise, typePeriode } = req.body;
-            if (!nom || !adresse) {
-                return res.status(400).json({ error: "Nom and adresse are required" });
-            }
-            const entreprise = await this.entrepriseService.create({
-                nom,
-                logo,
-                adresse,
-                devise,
-                typePeriode
-            });
+            const entreprise = await this.entrepriseService.create(req.body);
             res.status(201).json(entreprise);
         }
-        catch (err) {
-            res.status(400).json({ error: err.message });
+        catch (error) {
+            res.status(400).json({ message: error.message });
         }
     }
     async findAll(req, res) {
         try {
-            const entreprises = await this.entrepriseService.findAll();
+            const { nom } = req.query;
+            const filters = {};
+            if (nom) {
+                filters.nom = nom;
+            }
+            const entreprises = await this.entrepriseService.findAll(filters);
             res.json(entreprises);
         }
-        catch (err) {
-            res.status(400).json({ error: err.message });
+        catch (error) {
+            res.status(500).json({ message: error.message });
         }
     }
     async findById(req, res) {
         try {
             const { id } = req.params;
-            if (!id)
-                return res.status(400).json({ error: "ID required" });
-            const entreprise = await this.entrepriseService.findById(parseInt(id));
+            const entreprise = await this.entrepriseService.findById(Number(id));
             if (!entreprise) {
-                return res.status(404).json({ error: "Entreprise not found" });
+                res.status(404).json({ message: "Entreprise not found" });
+                return;
             }
             res.json(entreprise);
         }
-        catch (err) {
-            res.status(400).json({ error: err.message });
+        catch (error) {
+            res.status(400).json({ message: error.message });
+        }
+    }
+    async update(req, res) {
+        try {
+            const { id } = req.params;
+            const entreprise = await this.entrepriseService.update(Number(id), req.body);
+            res.json(entreprise);
+        }
+        catch (error) {
+            res.status(400).json({ message: error.message });
+        }
+    }
+    async delete(req, res) {
+        try {
+            const { id } = req.params;
+            await this.entrepriseService.delete(Number(id));
+            res.status(204).send();
+        }
+        catch (error) {
+            res.status(400).json({ message: error.message });
         }
     }
 }

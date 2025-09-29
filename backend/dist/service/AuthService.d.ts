@@ -9,8 +9,8 @@ export declare class AuthService {
             motDePasse: string;
             role: import("@prisma/client").$Enums.Role;
             actif: boolean;
-            entrepriseId: number | null;
             createdAt: Date;
+            entrepriseId: number | null;
             updatedAt: Date;
         };
     }>;

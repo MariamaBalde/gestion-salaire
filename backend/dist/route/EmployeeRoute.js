@@ -5,11 +5,11 @@ import { RoleMiddleware as roleMiddleware } from "../middleware/RoleMiddleware.j
 const employeeRouter = Router();
 const employeeController = new EmployeeController();
 employeeRouter.use(authMiddleware);
-employeeRouter.get("/", roleMiddleware(["ADMIN", "CAISSIER"]), employeeController.findAll);
-employeeRouter.get("/:id", roleMiddleware(["ADMIN", "CAISSIER"]), employeeController.findById);
+employeeRouter.get("/", roleMiddleware(["ADMIN", "CAISSIER"]), (req, res) => employeeController.findAll(req, res));
+employeeRouter.get("/:id", roleMiddleware(["ADMIN", "CAISSIER"]), (req, res) => employeeController.findById(req, res));
 employeeRouter.post("/", roleMiddleware(["ADMIN"]), (req, res) => employeeController.create(req, res));
-employeeRouter.put("/:id", roleMiddleware(["ADMIN"]), employeeController.update);
-employeeRouter.delete("/:id", roleMiddleware(["ADMIN"]), employeeController.delete);
-employeeRouter.patch("/:id/toggle-active", roleMiddleware(["ADMIN"]), employeeController.toggleActive);
+employeeRouter.put("/:id", roleMiddleware(["ADMIN"]), (req, res) => employeeController.update(req, res));
+employeeRouter.delete("/:id", roleMiddleware(["ADMIN"]), (req, res) => employeeController.delete(req, res));
+employeeRouter.patch("/:id/toggle-active", roleMiddleware(["ADMIN"]), (req, res) => employeeController.toggleActive(req, res));
 export { employeeRouter };
 //# sourceMappingURL=EmployeeRoute.js.map

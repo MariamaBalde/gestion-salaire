@@ -7,7 +7,7 @@ export class EmployeeRepository {
     async findById(id) {
         return prismaClient.employe.findUnique({
             where: { id },
-            include: { entreprise: true }
+            include: { entreprise: true },
         });
     }
     async findAll(filters) {
@@ -27,19 +27,19 @@ export class EmployeeRepository {
         return prismaClient.employe.findMany({
             where,
             include: { entreprise: true },
-            orderBy: { createdAt: 'desc' }
+            orderBy: { createdAt: "desc" },
         });
     }
     async update(id, data) {
         return prismaClient.employe.update({
             where: { id },
             data,
-            include: { entreprise: true }
+            include: { entreprise: true },
         });
     }
     async delete(id) {
         return prismaClient.employe.delete({
-            where: { id }
+            where: { id },
         });
     }
     async toggleActive(id) {

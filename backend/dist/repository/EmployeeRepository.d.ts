@@ -1,6 +1,6 @@
-import { type Employe, type Prisma } from "@prisma/client";
+import { type Employe } from "@prisma/client";
 export declare class EmployeeRepository {
-    create(data: Prisma.EmployeCreateInput): Promise<Employe>;
+    create(data: Omit<Employe, "id" | "createdAt" | "updatedAt">): Promise<Employe>;
     findById(id: number): Promise<Employe | null>;
     findAll(filters?: {
         actif?: boolean;
@@ -8,7 +8,7 @@ export declare class EmployeeRepository {
         typeContrat?: string;
         entrepriseId?: number;
     }): Promise<Employe[]>;
-    update(id: number, data: Prisma.EmployeUpdateInput): Promise<Employe>;
+    update(id: number, data: Partial<Omit<Employe, "id" | "createdAt" | "updatedAt">>): Promise<Employe>;
     delete(id: number): Promise<Employe>;
     toggleActive(id: number): Promise<Employe>;
 }

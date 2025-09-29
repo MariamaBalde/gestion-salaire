@@ -1,14 +1,7 @@
 import type { Employe } from "@prisma/client";
 export declare class EmployeeService {
     private employeeRepository;
-    create(data: {
-        nomComplet: string;
-        poste: string;
-        typeContrat: string;
-        tauxSalaire: number;
-        coordonneesBancaires?: string;
-        entrepriseId: number;
-    }): Promise<Employe>;
+    create(data: Omit<Employe, "id" | "createdAt" | "updatedAt">): Promise<Employe>;
     findById(id: number): Promise<Employe | null>;
     findAll(filters?: {
         actif?: boolean;
@@ -16,13 +9,7 @@ export declare class EmployeeService {
         typeContrat?: string;
         entrepriseId?: number;
     }): Promise<Employe[]>;
-    update(id: number, data: {
-        nomComplet?: string;
-        poste?: string;
-        typeContrat?: string;
-        tauxSalaire?: number;
-        coordonneesBancaires?: string;
-    }): Promise<Employe>;
+    update(id: number, data: Partial<Omit<Employe, "id" | "createdAt" | "updatedAt">>): Promise<Employe>;
     delete(id: number): Promise<Employe>;
     toggleActive(id: number): Promise<Employe>;
 }

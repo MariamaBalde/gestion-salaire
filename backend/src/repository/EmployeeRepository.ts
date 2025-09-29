@@ -1,16 +1,18 @@
-import { PrismaClient, type Employe, type Prisma } from "@prisma/client";
+import { PrismaClient, type Employe } from "@prisma/client";
 
 const prismaClient = new PrismaClient();
 
 export class EmployeeRepository {
-  async create(data: Prisma.EmployeCreateInput): Promise<Employe> {
+  async create(
+    data: Omit<Employe, "id" | "createdAt" | "updatedAt">
+  ): Promise<Employe> {
     return prismaClient.employe.create({ data });
   }
 
   async findById(id: number): Promise<Employe | null> {
     return prismaClient.employe.findUnique({
       where: { id },
-      include: { entreprise: true }
+      include: { entreprise: true },
     });
   }
 
@@ -20,7 +22,7 @@ export class EmployeeRepository {
     typeContrat?: string;
     entrepriseId?: number;
   }): Promise<Employe[]> {
-    const where: Prisma.EmployeWhereInput = {};
+    const where: any = {};
 
     if (filters?.actif !== undefined) {
       where.actif = filters.actif;
@@ -41,21 +43,24 @@ export class EmployeeRepository {
     return prismaClient.employe.findMany({
       where,
       include: { entreprise: true },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: "desc" },
     });
   }
 
-  async update(id: number, data: Prisma.EmployeUpdateInput): Promise<Employe> {
+  async update(
+    id: number,
+    data: Partial<Omit<Employe, "id" | "createdAt" | "updatedAt">>
+  ): Promise<Employe> {
     return prismaClient.employe.update({
       where: { id },
       data,
-      include: { entreprise: true }
+      include: { entreprise: true },
     });
   }
 
   async delete(id: number): Promise<Employe> {
     return prismaClient.employe.delete({
-      where: { id }
+      where: { id },
     });
   }
 
