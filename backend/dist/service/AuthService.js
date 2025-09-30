@@ -12,7 +12,7 @@ export class AuthService {
         if (!match)
             throw new Error("Invalid credentials");
         const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: "1h" });
-        return { token, user };
+        return { token, user: { ...user, motDePasse: undefined } };
     }
 }
 //# sourceMappingURL=AuthService.js.map

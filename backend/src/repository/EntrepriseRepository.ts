@@ -21,11 +21,21 @@ export class EntrepriseRepository {
   // 🔹 Recherche avec filtres
   async findAll(filters?: {
     nom?: string;
+    createdById?: number;
+    id?: number;
   }): Promise<Entreprise[]> {
     const where: any = {};
 
     if (filters?.nom) {
       where.nom = { contains: filters.nom };
+    }
+
+    if (filters?.createdById) {
+      where.createdById = filters.createdById;
+    }
+
+    if (filters?.id) {
+      where.id = filters.id;
     }
 
     return prismaClient.entreprise.findMany({

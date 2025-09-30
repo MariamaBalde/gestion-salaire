@@ -2,11 +2,13 @@ import { EntrepriseRepository } from "../repository/EntrepriseRepository.js";
 export class EntrepriseService {
     entrepriseRepository = new EntrepriseRepository();
     // 🔹 Création d’une entreprise
-    async create(data) {
+    async create(data, createdById) {
         return this.entrepriseRepository.create({
             ...data,
+            logo: null,
             devise: data.devise || "XOF",
-            typePeriode: data.typePeriode || "MENSUELLE"
+            typePeriode: data.typePeriode || "MENSUELLE",
+            createdById: createdById || null
         });
     }
     async findById(id) {

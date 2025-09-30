@@ -21,6 +21,7 @@ export class EmployeeRepository {
     poste?: string;
     typeContrat?: string;
     entrepriseId?: number;
+    entrepriseCreatedById?: number;
   }): Promise<Employe[]> {
     const where: any = {};
 
@@ -40,12 +41,25 @@ export class EmployeeRepository {
       where.entrepriseId = filters.entrepriseId;
     }
 
-    return prismaClient.employe.findMany({
+    if (filters?.entrepriseCreatedById) {
+      where.entreprise = {
+        createdById: filters.entrepriseCreatedById
+      };
+    }
+
+    console.log('EmployeeRepository findAll - where clause:', where);
+
+    const employees = await prismaClient.employe.findMany({
       where,
       include: { entreprise: true },
       orderBy: { createdAt: "desc" },
     });
+
+    console.log('EmployeeRepository findAll - employees count:', employees.length);
+
+    return employees;
   }
+
 
   async update(
     id: number,

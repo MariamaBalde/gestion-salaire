@@ -24,6 +24,11 @@ export class EmployeeRepository {
         if (filters?.entrepriseId) {
             where.entrepriseId = filters.entrepriseId;
         }
+        if (filters?.entrepriseCreatedById) {
+            where.entreprise = {
+                createdById: filters.entrepriseCreatedById
+            };
+        }
         return prismaClient.employe.findMany({
             where,
             include: { entreprise: true },

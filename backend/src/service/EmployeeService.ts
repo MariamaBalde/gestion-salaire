@@ -22,6 +22,7 @@ export class EmployeeService {
     poste?: string;
     typeContrat?: string;
     entrepriseId?: number;
+    entrepriseCreatedById?: number;
   }): Promise<Employe[]> {
     return this.employeeRepository.findAll(filters);
   }

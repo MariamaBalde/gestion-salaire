@@ -12,5 +12,27 @@ export class UserRepository {
             where: { email },
         });
     }
+    findByEntreprise(entrepriseId) {
+        return prismaClient.utilisateur.findMany({
+            where: { entrepriseId },
+        });
+    }
+    findById(id) {
+        return prismaClient.utilisateur.findUnique({
+            where: { id },
+            include: { entreprise: true }
+        });
+    }
+    update(id, data) {
+        return prismaClient.utilisateur.update({
+            where: { id },
+            data,
+        });
+    }
+    delete(id) {
+        return prismaClient.utilisateur.delete({
+            where: { id },
+        });
+    }
 }
 //# sourceMappingURL=UserRepository.js.map

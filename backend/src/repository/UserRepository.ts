@@ -14,5 +14,31 @@ export class UserRepository implements IRepository<Utilisateur> {
     return prismaClient.utilisateur.findUnique({
       where: { email },
     });
-}
+  }
+
+  findByEntreprise(entrepriseId: number): Promise<Utilisateur[]> {
+    return prismaClient.utilisateur.findMany({
+      where: { entrepriseId },
+    });
+  }
+
+  findById(id: number): Promise<Utilisateur | null> {
+    return prismaClient.utilisateur.findUnique({
+      where: { id },
+      include: { entreprise: true }
+    });
+  }
+
+  update(id: number, data: Partial<Utilisateur>): Promise<Utilisateur> {
+    return prismaClient.utilisateur.update({
+      where: { id },
+      data,
+    });
+  }
+
+  delete(id: number): Promise<Utilisateur> {
+    return prismaClient.utilisateur.delete({
+      where: { id },
+    });
+  }
 }

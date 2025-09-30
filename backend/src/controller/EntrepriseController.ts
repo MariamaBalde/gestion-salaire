@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import { EntrepriseService } from "../service/EntrepriseService.js";
+import { entrepriseSchema } from "../validation/validation.js";
 
 export class EntrepriseController {
   private entrepriseService = new EntrepriseService();
@@ -7,7 +8,8 @@ export class EntrepriseController {
   // 🔹 Créer une entreprise
   async create(req: Request, res: Response): Promise<void> {
     try {
-      const entreprise = await this.entrepriseService.create(req.body);
+      const validatedData = entrepriseSchema.parse(req.body);
+      const entreprise = await this.entrepriseService.create(validatedData, (req.user as any).id);
       res.status(201).json(entreprise);
     } catch (error: any) {
       res.status(400).json({ message: error.message });
@@ -23,6 +25,13 @@ export class EntrepriseController {
         filters.nom = nom as string;
       }
 
+      const user = req.user as any;
+      if (user.role === 'SUPER_ADMIN') {
+        filters.createdById = user.id;
+      } else if (user.role === 'ADMIN') {
+        filters.id = user.entrepriseId;
+      }
+
       const entreprises = await this.entrepriseService.findAll(filters);
       res.json(entreprises);
     } catch (error: any) {
@@ -32,16 +41,20 @@ export class EntrepriseController {
 
   async findById(req: Request, res: Response): Promise<void> {
     try {
+      console.log('Finding enterprise by id:', req.params.id);
       const { id } = req.params;
       const entreprise = await this.entrepriseService.findById(Number(id));
 
       if (!entreprise) {
+        console.log('Enterprise not found');
         res.status(404).json({ message: "Entreprise not found" });
         return;
       }
 
+      console.log('Enterprise found:', entreprise);
       res.json(entreprise);
     } catch (error: any) {
+      console.error('Error finding enterprise:', error);
       res.status(400).json({ message: error.message });
     }
   }

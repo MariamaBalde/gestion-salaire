@@ -6,7 +6,17 @@ const employeeService = new EmployeeService();
 export class EmployeeController {
   async create(req: Request, res: Response): Promise<void> {
     try {
-      const employee = await employeeService.create(req.body);
+      const user = req.user as any;
+      const body = { ...req.body };
+
+      if (user.role === 'ADMIN' || user.role === 'CAISSIER') {
+        if (!body.entrepriseId) {
+          body.entrepriseId = user.entrepriseId;
+        }
+      }
+      // For SUPER_ADMIN, entrepriseId should be provided in body
+
+      const employee = await employeeService.create(body);
       res.status(201).json(employee);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
@@ -16,27 +26,25 @@ export class EmployeeController {
   async findAll(req: Request, res: Response): Promise<void> {
     try {
       const filters: any = {};
-
-      if (req.query.actif !== undefined) {
-        filters.actif = req.query.actif === "true";
-      }
-
-      if (req.query.poste) {
-        filters.poste = req.query.poste as string;
-      }
-
-      if (req.query.typeContrat) {
-        filters.typeContrat = req.query.typeContrat as string;
-      }
+      const user = req.user as any;
+      
+      console.log('EmployeeController findAll - user role:', user.role);
+      console.log('EmployeeController findAll - req.query:', req.query);
 
       if (req.query.entrepriseId) {
-        filters.entrepriseId = Number(req.query.entrepriseId);
+        filters.entrepriseId = parseInt(req.query.entrepriseId as string);
+        console.log('EmployeeController findAll - SUPER_ADMIN with entrepriseId:', filters.entrepriseId);
+      } else if (user.role === 'ADMIN' || user.role === 'CAISSIER') {
+        filters.entrepriseId = user.entrepriseId;
       }
 
+      console.log('EmployeeController findAll - final filters:', filters);
+      
       const employees = await employeeService.findAll(filters);
       res.json(employees);
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      console.error('Error in findAll:', error);
+      res.status(500).json({ message: error.message });
     }
   }
 

@@ -8,16 +8,16 @@ const employeeController = new EmployeeController();
 
 employeeRouter.use(authMiddleware);
 
-employeeRouter.get("/", roleMiddleware(["ADMIN", "CAISSIER"]), (req, res) => employeeController.findAll(req, res));
+employeeRouter.get("/", roleMiddleware(["SUPER_ADMIN", "ADMIN", "CAISSIER"]), (req, res) => employeeController.findAll(req, res));
 
-employeeRouter.get("/:id", roleMiddleware(["ADMIN", "CAISSIER"]), (req, res) => employeeController.findById(req, res));
+employeeRouter.get("/:id", roleMiddleware(["SUPER_ADMIN", "ADMIN", "CAISSIER"]), (req, res) => employeeController.findById(req, res));
 
-employeeRouter.post("/", roleMiddleware(["ADMIN"]), (req, res) => employeeController.create(req, res));
+employeeRouter.post("/", roleMiddleware(["SUPER_ADMIN", "ADMIN"]), (req, res) => employeeController.create(req, res));
 
-employeeRouter.put("/:id", roleMiddleware(["ADMIN"]), (req, res) => employeeController.update(req, res));
+employeeRouter.put("/:id", roleMiddleware(["SUPER_ADMIN", "ADMIN"]), (req, res) => employeeController.update(req, res));
 
-employeeRouter.delete("/:id", roleMiddleware(["ADMIN"]), (req, res) => employeeController.delete(req, res));
+employeeRouter.delete("/:id", roleMiddleware(["SUPER_ADMIN", "ADMIN"]), (req, res) => employeeController.delete(req, res));
 
-employeeRouter.patch("/:id/toggle-active", roleMiddleware(["ADMIN"]), (req, res) => employeeController.toggleActive(req, res));
+employeeRouter.patch("/:id/toggle-active", roleMiddleware(["SUPER_ADMIN", "ADMIN"]), (req, res) => employeeController.toggleActive(req, res));
 
 export { employeeRouter };

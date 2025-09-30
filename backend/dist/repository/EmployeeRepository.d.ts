@@ -7,6 +7,7 @@ export declare class EmployeeRepository {
         poste?: string;
         typeContrat?: string;
         entrepriseId?: number;
+        entrepriseCreatedById?: number;
     }): Promise<Employe[]>;
     update(id: number, data: Partial<Omit<Employe, "id" | "createdAt" | "updatedAt">>): Promise<Employe>;
     delete(id: number): Promise<Employe>;

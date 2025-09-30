@@ -18,6 +18,12 @@ export class EntrepriseRepository {
         if (filters?.nom) {
             where.nom = { contains: filters.nom };
         }
+        if (filters?.createdById) {
+            where.createdById = filters.createdById;
+        }
+        if (filters?.id) {
+            where.id = filters.id;
+        }
         return prismaClient.entreprise.findMany({
             where,
             include: { employes: true, utilisateurs: true },

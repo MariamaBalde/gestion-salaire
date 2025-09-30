@@ -6,12 +6,15 @@ export class EntrepriseService {
 
   // 🔹 Création d’une entreprise
   async create(
-    data: Omit<Entreprise, "id" | "createdAt" | "updatedAt">
+    data: Omit<Entreprise, "id" | "createdAt" | "updatedAt" | "createdById" | "logo">,
+    createdById?: number
   ): Promise<Entreprise> {
     return this.entrepriseRepository.create({
       ...data,
+      logo: null,
       devise: data.devise || "XOF",
-      typePeriode: data.typePeriode || "MENSUELLE"
+      typePeriode: data.typePeriode || "MENSUELLE",
+      createdById: createdById || null
     });
   }
 
@@ -21,6 +24,8 @@ export class EntrepriseService {
 
   async findAll(filters?: {
     nom?: string;
+    createdById?: number;
+    id?: number;
   }): Promise<Entreprise[]> {
     return this.entrepriseRepository.findAll(filters);
   }

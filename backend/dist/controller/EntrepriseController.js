@@ -1,10 +1,12 @@
 import { EntrepriseService } from "../service/EntrepriseService.js";
+import { entrepriseSchema } from "../validation/validation.js";
 export class EntrepriseController {
     entrepriseService = new EntrepriseService();
     // 🔹 Créer une entreprise
     async create(req, res) {
         try {
-            const entreprise = await this.entrepriseService.create(req.body);
+            const validatedData = entrepriseSchema.parse(req.body);
+            const entreprise = await this.entrepriseService.create(validatedData, req.user.id);
             res.status(201).json(entreprise);
         }
         catch (error) {
@@ -17,6 +19,13 @@ export class EntrepriseController {
             const filters = {};
             if (nom) {
                 filters.nom = nom;
+            }
+            const user = req.user;
+            if (user.role === 'SUPER_ADMIN') {
+                filters.createdById = user.id;
+            }
+            else if (user.role === 'ADMIN') {
+                filters.id = user.entrepriseId;
             }
             const entreprises = await this.entrepriseService.findAll(filters);
             res.json(entreprises);

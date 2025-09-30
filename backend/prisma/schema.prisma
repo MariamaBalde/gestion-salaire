@@ -18,6 +18,7 @@ model Utilisateur {
   entrepriseId Int?
   updatedAt    DateTime    @updatedAt
   entreprise   Entreprise? @relation(fields: [entrepriseId], references: [id])
+  createdEntreprises Entreprise[] @relation("EntrepriseCreatedBy")
 
   @@index([entrepriseId], map: "Utilisateur_entrepriseId_fkey")
 }
@@ -29,10 +30,12 @@ model Entreprise {
   adresse      String
   devise       String        @default("XOF")
   typePeriode  TypePeriode   @default(MENSUELLE)
+  createdById  Int?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   employes     Employe[]
   utilisateurs Utilisateur[]
+  createdBy    Utilisateur?  @relation("EntrepriseCreatedBy", fields: [createdById], references: [id])
 }
 
 model Employe {

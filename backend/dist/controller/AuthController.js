@@ -1,9 +1,11 @@
 import { AuthService } from "../service/AuthService.js";
+import { loginSchema } from "../validation/validation.js";
 export class AuthController {
     authService = new AuthService();
     async login(req, res) {
         try {
-            const { email, motDePasse } = req.body;
+            const validatedData = loginSchema.parse(req.body);
+            const { email, motDePasse } = validatedData;
             const result = await this.authService.login(email, motDePasse);
             res.json(result);
         }

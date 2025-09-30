@@ -22,8 +22,17 @@ export class EmployeeController {
             if (req.query.typeContrat) {
                 filters.typeContrat = req.query.typeContrat;
             }
-            if (req.query.entrepriseId) {
-                filters.entrepriseId = Number(req.query.entrepriseId);
+            const user = req.user;
+            if (user.role === 'SUPER_ADMIN') {
+                if (req.query.entrepriseId) {
+                    filters.entrepriseId = Number(req.query.entrepriseId);
+                }
+                else {
+                    filters.entrepriseCreatedById = user.id;
+                }
+            }
+            else if (user.role === 'ADMIN' || user.role === 'CAISSIER') {
+                filters.entrepriseId = user.entrepriseId;
             }
             const employees = await employeeService.findAll(filters);
             res.json(employees);
