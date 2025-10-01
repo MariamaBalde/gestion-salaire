@@ -133,7 +133,7 @@ function UserForm({ user, onSave, onCancel, currentUser, companies }) {
     email: '',
     motDePasse: '',
     role: 'CAISSIER',
-    entrepriseId: currentUser?.entrepriseId || ''
+    entrepriseId: currentUser?.role === 'ADMIN' ? currentUser.entrepriseId : ''
   });
 
   const handleChange = (e) => {
@@ -197,7 +197,7 @@ function UserForm({ user, onSave, onCancel, currentUser, companies }) {
           <option value="CAISSIER">Caissier</option>
         </select>
       </div>
-      {currentUser?.role === 'SUPER_ADMIN' && formData.role === 'ADMIN' && (
+      {currentUser?.role === 'SUPER_ADMIN' && (formData.role === 'ADMIN' || formData.role === 'CAISSIER') && (
         <div>
           <label className="block text-sm font-medium text-gray-700">Entreprise</label>
           <select

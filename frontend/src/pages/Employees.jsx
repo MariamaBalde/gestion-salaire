@@ -15,6 +15,8 @@ export default function Employees() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [viewingEmployee, setViewingEmployee] = useState(null);
   const isSuperAdminView = user?.role === 'SUPER_ADMIN' && entrepriseId;
   const showEntrepriseColumn = user?.role === 'SUPER_ADMIN' && !entrepriseId;
   const showActionsColumn = !showEntrepriseColumn;
@@ -70,6 +72,12 @@ export default function Employees() {
       {showActionsColumn && (
         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
           <button
+            onClick={() => handleView(employee)}
+            className="text-blue-600 hover:text-blue-900 mr-2"
+          >
+            Détails
+          </button>
+          <button
             onClick={() => handleEdit(employee)}
             className="text-primary hover:text-primary-light mr-2"
           >
@@ -94,6 +102,11 @@ export default function Employees() {
   const handleEdit = (employee) => {
     setEditingEmployee(employee);
     setIsModalOpen(true);
+  };
+
+  const handleView = (employee) => {
+    setViewingEmployee(employee);
+    setIsDetailsModalOpen(true);
   };
 
   const handleDelete = async (id) => {
@@ -154,6 +167,14 @@ export default function Employees() {
           />
         </Modal>
       )}
+
+      <Modal
+        isOpen={isDetailsModalOpen}
+        onClose={() => setIsDetailsModalOpen(false)}
+        title="Détails de l'employé"
+      >
+        {viewingEmployee && <EmployeeDetails employee={viewingEmployee} />}
+      </Modal>
     </div>
   );
 }
@@ -236,5 +257,42 @@ function EmployeeForm({ employee, onSave, onCancel, user }) {
         <Button type="submit">Sauvegarder</Button>
       </div>
     </form>
+  );
+}
+
+function EmployeeDetails({ employee }) {
+  return (
+    <dl className="space-y-4">
+      <div>
+        <dt className="text-sm font-medium text-gray-500">Nom complet</dt>
+        <dd className="mt-1 text-sm text-gray-900">{employee.nomComplet}</dd>
+      </div>
+      <div>
+        <dt className="text-sm font-medium text-gray-500">Poste</dt>
+        <dd className="mt-1 text-sm text-gray-900">{employee.poste}</dd>
+      </div>
+      <div>
+        <dt className="text-sm font-medium text-gray-500">Type de contrat</dt>
+        <dd className="mt-1 text-sm text-gray-900">{employee.typeContrat}</dd>
+      </div>
+      <div>
+        <dt className="text-sm font-medium text-gray-500">Taux salaire</dt>
+        <dd className="mt-1 text-sm text-gray-900">€{employee.tauxSalaire}</dd>
+      </div>
+      <div>
+        <dt className="text-sm font-medium text-gray-500">Coordonnées bancaires</dt>
+        <dd className="mt-1 text-sm text-gray-900">{employee.coordonneesBancaires || 'N/A'}</dd>
+      </div>
+      <div>
+        <dt className="text-sm font-medium text-gray-500">Statut</dt>
+        <dd className="mt-1 text-sm text-gray-900">{employee.actif ? 'Actif' : 'Inactif'}</dd>
+      </div>
+      {employee.entreprise && (
+        <div>
+          <dt className="text-sm font-medium text-gray-500">Entreprise</dt>
+          <dd className="mt-1 text-sm text-gray-900">{employee.entreprise.nom}</dd>
+        </div>
+      )}
+    </dl>
   );
 }

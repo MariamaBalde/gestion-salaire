@@ -56,6 +56,13 @@ export class EmployeeController {
         res.status(404).json({ error: "Employee not found" });
         return;
       }
+
+      const user = req.user as any;
+      if ((user.role === 'ADMIN' || user.role === 'CAISSIER') && employee.entrepriseId !== user.entrepriseId) {
+        res.status(403).json({ message: "Access denied" });
+        return;
+      }
+
       res.json(employee);
     } catch (error: any) {
       res.status(500).json({ error: error.message });

@@ -21,6 +21,14 @@ export const entrepriseSchema = z.object({
   typePeriode: z.enum(['MENSUELLE', 'HEBDOMADAIRE', 'JOURNALIERE']).default('MENSUELLE'),
 });
 
+export const payRunSchema = z.object({
+  entrepriseId: z.number().int().positive('Entreprise ID requis'),
+  type: z.enum(['MENSUELLE', 'HEBDOMADAIRE', 'JOURNALIERE'], 'Type de période invalide'),
+  dateDebut: z.string().refine(val => !isNaN(Date.parse(val)), 'Date de début invalide'),
+  dateFin: z.string().refine(val => !isNaN(Date.parse(val)), 'Date de fin invalide'),
+});
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type EntrepriseInput = z.infer<typeof entrepriseSchema>;
+export type PayRunInput = z.infer<typeof payRunSchema>;

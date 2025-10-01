@@ -26,11 +26,10 @@ export class EntrepriseController {
       }
 
       const user = req.user as any;
-      if (user.role === 'SUPER_ADMIN') {
-        filters.createdById = user.id;
-      } else if (user.role === 'ADMIN') {
+      if (user.role === 'ADMIN') {
         filters.id = user.entrepriseId;
       }
+      // SUPER_ADMIN sees all enterprises without filter
 
       const entreprises = await this.entrepriseService.findAll(filters);
       res.json(entreprises);
@@ -48,6 +47,12 @@ export class EntrepriseController {
       if (!entreprise) {
         console.log('Enterprise not found');
         res.status(404).json({ message: "Entreprise not found" });
+        return;
+      }
+
+      const user = req.user as any;
+      if (user.role === 'ADMIN' && entreprise.id !== user.entrepriseId) {
+        res.status(403).json({ message: "Access denied" });
         return;
       }
 

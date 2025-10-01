@@ -13,7 +13,13 @@ export const loginSchema = z.object({
 export const entrepriseSchema = z.object({
     nom: z.string().min(1, 'Le nom est requis'),
     adresse: z.string().min(1, 'L\'adresse est requise'),
-    devise: z.enum(['XOF', 'EUR', 'USD']).default('XOF'),
+    devise: z.string().default('XOF'),
     typePeriode: z.enum(['MENSUELLE', 'HEBDOMADAIRE', 'JOURNALIERE']).default('MENSUELLE'),
+});
+export const payRunSchema = z.object({
+    entrepriseId: z.number().int().positive('Entreprise ID requis'),
+    type: z.enum(['MENSUELLE', 'HEBDOMADAIRE', 'JOURNALIERE'], 'Type de période invalide'),
+    dateDebut: z.string().refine(val => !isNaN(Date.parse(val)), 'Date de début invalide'),
+    dateFin: z.string().refine(val => !isNaN(Date.parse(val)), 'Date de fin invalide'),
 });
 //# sourceMappingURL=validation.js.map

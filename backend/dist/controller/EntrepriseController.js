@@ -21,12 +21,10 @@ export class EntrepriseController {
                 filters.nom = nom;
             }
             const user = req.user;
-            if (user.role === 'SUPER_ADMIN') {
-                filters.createdById = user.id;
-            }
-            else if (user.role === 'ADMIN') {
+            if (user.role === 'ADMIN') {
                 filters.id = user.entrepriseId;
             }
+            // SUPER_ADMIN sees all enterprises without filter
             const entreprises = await this.entrepriseService.findAll(filters);
             res.json(entreprises);
         }
@@ -36,15 +34,24 @@ export class EntrepriseController {
     }
     async findById(req, res) {
         try {
+            console.log('Finding enterprise by id:', req.params.id);
             const { id } = req.params;
             const entreprise = await this.entrepriseService.findById(Number(id));
             if (!entreprise) {
+                console.log('Enterprise not found');
                 res.status(404).json({ message: "Entreprise not found" });
                 return;
             }
+            const user = req.user;
+            if (user.role === 'ADMIN' && entreprise.id !== user.entrepriseId) {
+                res.status(403).json({ message: "Access denied" });
+                return;
+            }
+            console.log('Enterprise found:', entreprise);
             res.json(entreprise);
         }
         catch (error) {
+            console.error('Error finding enterprise:', error);
             res.status(400).json({ message: error.message });
         }
     }

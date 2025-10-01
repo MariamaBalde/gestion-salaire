@@ -19,6 +19,8 @@ model Utilisateur {
   updatedAt    DateTime    @updatedAt
   entreprise   Entreprise? @relation(fields: [entrepriseId], references: [id])
   createdEntreprises Entreprise[] @relation("EntrepriseCreatedBy")
+  createdPayRuns PayRun[] @relation("PayRunCreatedBy")
+  createdPayments Payment[] @relation("PaymentCreatedBy")
 
   @@index([entrepriseId], map: "Utilisateur_entrepriseId_fkey")
 }
@@ -35,6 +37,7 @@ model Entreprise {
   updatedAt    DateTime      @updatedAt
   employes     Employe[]
   utilisateurs Utilisateur[]
+  payRuns      PayRun[]
   createdBy    Utilisateur?  @relation("EntrepriseCreatedBy", fields: [createdById], references: [id])
 }
 
@@ -50,6 +53,7 @@ model Employe {
   createdAt            DateTime    @default(now())
   updatedAt            DateTime    @updatedAt
   entreprise           Entreprise  @relation(fields: [entrepriseId], references: [id], onDelete: Cascade)
+  payslips             Payslip[]
 
   @@index([entrepriseId], map: "Employe_entrepriseId_fkey")
 }
@@ -71,4 +75,74 @@ enum TypeContrat {
   JOURNALIER
   FIXE
   HONORAIRE
+}
+
+model PayRun {
+  id          Int      @id @default(autoincrement())
+  entrepriseId Int
+  entreprise   Entreprise @relation(fields: [entrepriseId], references: [id], onDelete: Cascade)
+  type         TypePeriode
+  dateDebut    DateTime
+  dateFin      DateTime
+  status       PayRunStatus @default(BROUILLON)
+  createdById  Int?
+  createdBy    Utilisateur? @relation("PayRunCreatedBy", fields: [createdById], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  payslips     Payslip[]
+
+  @@index([entrepriseId], map: "PayRun_entrepriseId_fkey")
+}
+
+model Payslip {
+  id          Int      @id @default(autoincrement())
+  payRunId    Int
+  payRun      PayRun   @relation(fields: [payRunId], references: [id], onDelete: Cascade)
+  employeeId  Int
+  employee    Employe  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  joursTravailles Int?     // Nombre de jours travaillés (pour les journaliers)
+  brut        Float
+  deductions  Float    @default(0)
+  net         Float
+  status      PaymentStatus @default(ATTENTE)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  payments    Payment[]
+
+  @@index([payRunId], map: "Payslip_payRunId_fkey")
+  @@index([employeeId], map: "Payslip_employeeId_fkey")
+}
+
+model Payment {
+  id          Int      @id @default(autoincrement())
+  payslipId   Int
+  payslip     Payslip  @relation(fields: [payslipId], references: [id], onDelete: Cascade)
+  montant     Float
+  modePaiement ModePaiement
+  date        DateTime @default(now())
+  createdById Int?
+  createdBy   Utilisateur? @relation("PaymentCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([payslipId], map: "Payment_payslipId_fkey")
+}
+
+enum PayRunStatus {
+  BROUILLON
+  APPROUVE
+  CLOTURE
+}
+
+enum PaymentStatus {
+  PAYE
+  PARTIEL
+  ATTENTE
+}
+
+enum ModePaiement {
+  ESPECES
+  VIREMENT_BANCAIRE
+  ORANGE_MONEY
+  WAVE
 }

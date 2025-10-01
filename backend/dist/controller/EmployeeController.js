@@ -3,7 +3,15 @@ const employeeService = new EmployeeService();
 export class EmployeeController {
     async create(req, res) {
         try {
-            const employee = await employeeService.create(req.body);
+            const user = req.user;
+            const body = { ...req.body };
+            if (user.role === 'ADMIN' || user.role === 'CAISSIER') {
+                if (!body.entrepriseId) {
+                    body.entrepriseId = user.entrepriseId;
+                }
+            }
+            // For SUPER_ADMIN, entrepriseId should be provided in body
+            const employee = await employeeService.create(body);
             res.status(201).json(employee);
         }
         catch (error) {
@@ -13,32 +21,23 @@ export class EmployeeController {
     async findAll(req, res) {
         try {
             const filters = {};
-            if (req.query.actif !== undefined) {
-                filters.actif = req.query.actif === "true";
-            }
-            if (req.query.poste) {
-                filters.poste = req.query.poste;
-            }
-            if (req.query.typeContrat) {
-                filters.typeContrat = req.query.typeContrat;
-            }
             const user = req.user;
-            if (user.role === 'SUPER_ADMIN') {
-                if (req.query.entrepriseId) {
-                    filters.entrepriseId = Number(req.query.entrepriseId);
-                }
-                else {
-                    filters.entrepriseCreatedById = user.id;
-                }
+            console.log('EmployeeController findAll - user role:', user.role);
+            console.log('EmployeeController findAll - req.query:', req.query);
+            if (req.query.entrepriseId) {
+                filters.entrepriseId = parseInt(req.query.entrepriseId);
+                console.log('EmployeeController findAll - SUPER_ADMIN with entrepriseId:', filters.entrepriseId);
             }
             else if (user.role === 'ADMIN' || user.role === 'CAISSIER') {
                 filters.entrepriseId = user.entrepriseId;
             }
+            console.log('EmployeeController findAll - final filters:', filters);
             const employees = await employeeService.findAll(filters);
             res.json(employees);
         }
         catch (error) {
-            res.status(500).json({ error: error.message });
+            console.error('Error in findAll:', error);
+            res.status(500).json({ message: error.message });
         }
     }
     async findById(req, res) {
@@ -47,6 +46,11 @@ export class EmployeeController {
             const employee = await employeeService.findById(id);
             if (!employee) {
                 res.status(404).json({ error: "Employee not found" });
+                return;
+            }
+            const user = req.user;
+            if ((user.role === 'ADMIN' || user.role === 'CAISSIER') && employee.entrepriseId !== user.entrepriseId) {
+                res.status(403).json({ message: "Access denied" });
                 return;
             }
             res.json(employee);

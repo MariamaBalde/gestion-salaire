@@ -29,11 +29,14 @@ export class EmployeeRepository {
                 createdById: filters.entrepriseCreatedById
             };
         }
-        return prismaClient.employe.findMany({
+        console.log('EmployeeRepository findAll - where clause:', where);
+        const employees = await prismaClient.employe.findMany({
             where,
             include: { entreprise: true },
             orderBy: { createdAt: "desc" },
         });
+        console.log('EmployeeRepository findAll - employees count:', employees.length);
+        return employees;
     }
     async update(id, data) {
         return prismaClient.employe.update({
