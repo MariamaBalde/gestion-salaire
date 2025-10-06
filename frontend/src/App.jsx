@@ -9,6 +9,7 @@ import Users from './pages/Users';
 import PayRuns from './pages/PayRuns';
 import Payments from './pages/Payments';
 import Settings from './pages/Settings';
+import EnterpriseDetails from './pages/EnterpriseDetails';
 
 function AppContent() {
   const { isAuthenticated } = useAuth();
@@ -26,6 +27,7 @@ function AppContent() {
           <Route path="payruns" element={<PayRuns />} />
           <Route path="payments" element={<Payments />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="/enterprises/:id" element={<EnterpriseDetails />} />
         </Route>
       ) : (
         <Route path="*" element={<Navigate to="/login" replace />} />

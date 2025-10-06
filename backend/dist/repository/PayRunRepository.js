@@ -1,48 +1,80 @@
 import { PrismaClient } from "@prisma/client";
-const prismaClient = new PrismaClient();
 export class PayRunRepository {
+    getPrismaClient() {
+        return new PrismaClient();
+    }
     // 🔹 Création d’un cycle de paie
     async create(data) {
-        return prismaClient.payRun.create({ data });
+        const prismaClient = this.getPrismaClient();
+        try {
+            return await prismaClient.payRun.create({ data });
+        }
+        finally {
+            await prismaClient.$disconnect();
+        }
     }
     // 🔹 Recherche par ID
     async findById(id) {
-        return prismaClient.payRun.findUnique({
-            where: { id },
-            include: { payslips: { include: { employee: true, payments: true } }, entreprise: true, createdBy: true }
-        });
+        const prismaClient = this.getPrismaClient();
+        try {
+            return await prismaClient.payRun.findUnique({
+                where: { id },
+                include: { payslips: { include: { employee: true, payments: true } }, entreprise: true, createdBy: true }
+            });
+        }
+        finally {
+            await prismaClient.$disconnect();
+        }
     }
     // 🔹 Recherche avec filtres
     async findAll(filters) {
-        const where = {};
-        if (filters?.entrepriseId) {
-            where.entrepriseId = filters.entrepriseId;
+        const prismaClient = this.getPrismaClient();
+        try {
+            const where = {};
+            if (filters?.entrepriseId) {
+                where.entrepriseId = filters.entrepriseId;
+            }
+            if (filters?.status) {
+                where.status = filters.status;
+            }
+            if (filters?.createdById) {
+                where.createdById = filters.createdById;
+            }
+            return await prismaClient.payRun.findMany({
+                where,
+                include: { payslips: { include: { employee: true, payments: true } }, entreprise: true, createdBy: true },
+                orderBy: { createdAt: "desc" }
+            });
         }
-        if (filters?.status) {
-            where.status = filters.status;
+        finally {
+            await prismaClient.$disconnect();
         }
-        if (filters?.createdById) {
-            where.createdById = filters.createdById;
-        }
-        return prismaClient.payRun.findMany({
-            where,
-            include: { payslips: { include: { employee: true, payments: true } }, entreprise: true, createdBy: true },
-            orderBy: { createdAt: "desc" }
-        });
     }
     // 🔹 Mise à jour d’un cycle de paie
     async update(id, data) {
-        return prismaClient.payRun.update({
-            where: { id },
-            data,
-            include: { payslips: { include: { employee: true, payments: true } }, entreprise: true, createdBy: true }
-        });
+        const prismaClient = this.getPrismaClient();
+        try {
+            return await prismaClient.payRun.update({
+                where: { id },
+                data,
+                include: { payslips: { include: { employee: true, payments: true } }, entreprise: true, createdBy: true }
+            });
+        }
+        finally {
+            await prismaClient.$disconnect();
+        }
     }
     // 🔹 Suppression
     async delete(id) {
-        return prismaClient.payRun.delete({
-            where: { id }
-        });
+        const prismaClient = this.getPrismaClient();
+        try {
+            return await prismaClient.payRun.delete({
+                where: { id }
+            });
+        }
+        finally {
+            await prismaClient.$disconnect();
+        }
     }
 }
 //# sourceMappingURL=PayRunRepository.js.map

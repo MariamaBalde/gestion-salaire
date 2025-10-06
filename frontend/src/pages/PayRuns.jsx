@@ -4,9 +4,11 @@ import Button from '../components/Button';
 import Modal from '../components/Modal';
 import api from '../api';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 
 export default function PayRuns() {
   const { user } = useAuth();
+  const { showSuccess, showError } = useToast();
   const [payRuns, setPayRuns] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -21,6 +23,9 @@ export default function PayRuns() {
       setPayRuns(response.data);
     } catch (error) {
       console.error('Error fetching payruns:', error);
+      if (error.response?.status === 403) {
+        showError('Accès refusé: Vous n\'avez pas les permissions nécessaires pour consulter les cycles de paie.');
+      }
     } finally {
       setLoading(false);
     }
@@ -33,6 +38,33 @@ export default function PayRuns() {
       fetchPayRuns(); // Refresh list
     } catch (error) {
       console.error('Error creating payrun:', error);
+      if (error.response?.status === 403) {
+        showError('Accès refusé: Vous n\'avez pas les permissions nécessaires pour créer un cycle de paie. Contactez votre administrateur.');
+      } else {
+        showError('Erreur lors de la création du cycle de paie. Veuillez réessayer.');
+      }
+    }
+  };
+
+  const handleApprove = async (payRunId) => {
+    try {
+      await api.patch(`/payruns/${payRunId}/approve`);
+      fetchPayRuns(); // Refresh list
+      showSuccess('Cycle de paie approuvé avec succès');
+    } catch (error) {
+      console.error('Error approving payrun:', error);
+      showError('Erreur lors de l\'approbation du cycle de paie');
+    }
+  };
+
+  const handleClose = async (payRunId) => {
+    try {
+      await api.patch(`/payruns/${payRunId}/close`);
+      fetchPayRuns(); // Refresh list
+      showSuccess('Cycle de paie clôturé avec succès');
+    } catch (error) {
+      console.error('Error closing payrun:', error);
+      showError('Erreur lors de la clôture du cycle de paie');
     }
   };
 
@@ -64,7 +96,9 @@ export default function PayRuns() {
       <div className="bg-white p-6 rounded-lg shadow">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-medium">Liste des cycles</h2>
-          <Button onClick={() => setIsModalOpen(true)}>Créer un cycle de paie</Button>
+          {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN') && (
+            <Button onClick={() => setIsModalOpen(true)}>Créer un cycle de paie</Button>
+          )}
         </div>
         <div className="space-y-4">
           {payRuns.map((payRun) => (
@@ -80,7 +114,27 @@ export default function PayRuns() {
                     </Badge>
                   </p>
                 </div>
-                <Button variant="secondary">Voir détails</Button>
+                <div className="flex space-x-2">
+                  <Button variant="secondary" size="sm">Voir détails</Button>
+                  {payRun.status === 'BROUILLON' && (user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN') && (
+                    <Button
+                      variant="success"
+                      size="sm"
+                      onClick={() => handleApprove(payRun.id)}
+                    >
+                      Approuver
+                    </Button>
+                  )}
+                  {payRun.status === 'APPROUVE' && (user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN') && (
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => handleClose(payRun.id)}
+                    >
+                      Clôturer
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           ))}

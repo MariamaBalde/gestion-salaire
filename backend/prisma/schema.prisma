@@ -119,6 +119,7 @@ model Payment {
   payslip     Payslip  @relation(fields: [payslipId], references: [id], onDelete: Cascade)
   montant     Float
   modePaiement ModePaiement
+  reference   String?
   date        DateTime @default(now())
   createdById Int?
   createdBy   Utilisateur? @relation("PaymentCreatedBy", fields: [createdById], references: [id])

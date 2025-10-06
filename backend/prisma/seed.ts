@@ -4,7 +4,6 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
-  // Create default super admin
   const superAdminPassword = await bcrypt.hash('superadmin123', 10);
   const superAdmin = await prisma.utilisateur.upsert({
     where: { email: 'superadmin@gessalaire.com' },
@@ -17,7 +16,6 @@ async function main() {
     },
   });
 
-  // Create entreprise
   const entreprise = await prisma.entreprise.upsert({
     where: { id: 1 },
     update: {},
@@ -30,7 +28,6 @@ async function main() {
     },
   });
 
-  // Create admin user for the entreprise
   const hashedPassword = await bcrypt.hash('admin123', 10);
   const admin = await prisma.utilisateur.upsert({
     where: { email: 'admin@demo.com' },
@@ -44,7 +41,19 @@ async function main() {
     },
   });
 
-  // Create some employees
+  const cashierPassword = await bcrypt.hash('caissier123', 10);
+  const cashier = await prisma.utilisateur.upsert({
+    where: { email: 'caissier@demo.com' },
+    update: {},
+    create: {
+      nom: 'Caissier Demo',
+      email: 'caissier@demo.com',
+      motDePasse: cashierPassword,
+      role: 'CAISSIER',
+      entrepriseId: entreprise.id,
+    },
+  });
+
   await prisma.employe.upsert({
     where: { id: 1 },
     update: {},

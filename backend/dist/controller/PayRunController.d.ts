@@ -6,5 +6,7 @@ export declare class PayRunController {
     findById(req: Request, res: Response): Promise<void>;
     update(req: Request, res: Response): Promise<void>;
     delete(req: Request, res: Response): Promise<void>;
+    approve(req: Request, res: Response): Promise<void>;
+    close(req: Request, res: Response): Promise<void>;
 }
 //# sourceMappingURL=PayRunController.d.ts.map

@@ -7,8 +7,8 @@ export class PaymentController {
     async create(req, res) {
         try {
             const user = req.user;
-            const payment = await this.paymentService.create(req.body, user.id);
-            res.status(201).json(payment);
+            const result = await this.paymentService.create(req.body, user.id);
+            res.status(201).json(result);
         }
         catch (error) {
             res.status(400).json({ message: error.message });

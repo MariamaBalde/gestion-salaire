@@ -17,6 +17,9 @@ export declare class PDFService {
             brut: number;
             deductions: number;
             net: number;
+            payments: {
+                montant: number;
+            }[];
         };
         createdBy?: {
             nom: string;

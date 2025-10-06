@@ -11,16 +11,37 @@ export class PaymentService {
   async create(
     data: Omit<Payment, "id" | "createdAt" | "updatedAt" | "createdById">,
     createdById?: number
-  ): Promise<Payment> {
+  ): Promise<{ payment: Payment; payslip: any }> {
+    // Vérifier que le montant ne dépasse pas le net restant
+    const payslip = await prismaClient.payslip.findUnique({
+      where: { id: data.payslipId },
+      include: { payments: true }
+    });
+
+    if (!payslip) {
+      throw new Error("Payslip not found");
+    }
+
+    if (payslip.status === 'PAYE') {
+      throw new Error("Cannot add payment to a fully paid payslip");
+    }
+
+    const totalPaid = payslip.payments.reduce((sum, p) => sum + p.montant, 0);
+    const remaining = payslip.net - totalPaid;
+
+    if (data.montant > remaining) {
+      throw new Error(`Payment amount (${data.montant}) exceeds remaining balance (${remaining})`);
+    }
+
     const payment = await this.paymentRepository.create({
       ...data,
       createdById: createdById || null
     });
 
     // Mettre à jour le statut du payslip
-    await this.updatePayslipStatus(data.payslipId);
+    const updatedPayslip = await this.updatePayslipStatus(data.payslipId);
 
-    return payment;
+    return { payment, payslip: updatedPayslip };
   }
 
   async findById(id: number): Promise<Payment | null> {
@@ -64,13 +85,13 @@ export class PaymentService {
   }
 
   // 🔹 Mettre à jour le statut du payslip basé sur les paiements
-  private async updatePayslipStatus(payslipId: number): Promise<void> {
+  private async updatePayslipStatus(payslipId: number): Promise<any> {
     const payslip = await prismaClient.payslip.findUnique({
       where: { id: payslipId },
-      include: { payments: true }
+      include: { payments: true, employee: true, payRun: { include: { entreprise: true } } }
     });
 
-    if (!payslip) return;
+    if (!payslip) throw new Error("Payslip not found");
 
     const totalPaid = payslip.payments.reduce((sum, p) => sum + p.montant, 0);
 
@@ -83,9 +104,10 @@ export class PaymentService {
       status = 'PARTIEL';
     }
 
-    await prismaClient.payslip.update({
+    return await prismaClient.payslip.update({
       where: { id: payslipId },
-      data: { status: status as any }
+      data: { status: status as any },
+      include: { payments: true, employee: true, payRun: { include: { entreprise: true } } }
     });
   }
 }

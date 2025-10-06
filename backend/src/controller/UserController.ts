@@ -7,35 +7,33 @@ export class UserController {
 
   async Inscription(req: Request, res: Response): Promise<void> {
     try {
-      const validatedData = registerSchema.parse(req.body);
-      const { nom, email, motDePasse, role, entrepriseId } = validatedData;
-      const user = req.user as any;
+      console.log('Received registration data:', req.body);
+      const { nom, email, motDePasse, role, entrepriseId } = req.body;
 
-      let finalEntrepriseId = entrepriseId;
-      if (!finalEntrepriseId) {
-        // If no entrepriseId provided, use creator's entrepriseId (for ADMIN creating CAISSIER)
-        if (!user.entrepriseId) {
-          res.status(400).json({ message: "Entreprise requise pour créer cet utilisateur" });
-          return;
-        }
-        finalEntrepriseId = user.entrepriseId;
+      if (!entrepriseId) {
+        res.status(400).json({ message: "L'ID de l'entreprise est requis" });
+        return;
       }
-      // For SUPER_ADMIN creating ADMIN, entrepriseId should be provided in request
 
+      // Create user
       const utilisateur = await this.userService.create({
         nom,
         email,
         motDePasse,
-        role,
-        entrepriseId: finalEntrepriseId!
+        role: role || 'ADMIN',
+        entrepriseId: parseInt(entrepriseId),
+        actif: true
       });
 
       res.status(201).json({
         message: "Utilisateur créé avec succès",
-        utilisateur,
+        utilisateur: { ...utilisateur, motDePasse: undefined },
       });
     } catch (error: any) {
-      res.status(400).json({ message: error.message });
+      console.error('Error in user creation:', error);
+      res.status(400).json({ 
+        message: error.message || "Erreur lors de la création de l'utilisateur"
+      });
     }
   }
 

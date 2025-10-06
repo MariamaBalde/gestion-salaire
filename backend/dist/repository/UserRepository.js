@@ -1,38 +1,82 @@
 import { PrismaClient } from "@prisma/client";
-const prismaClient = new PrismaClient();
 export class UserRepository {
-    findAll() {
-        return prismaClient.utilisateur.findMany();
+    getPrismaClient() {
+        return new PrismaClient();
     }
-    create(data) {
-        return prismaClient.utilisateur.create({ data });
+    async findAll() {
+        const prismaClient = this.getPrismaClient();
+        try {
+            return await prismaClient.utilisateur.findMany();
+        }
+        finally {
+            await prismaClient.$disconnect();
+        }
     }
-    findByEmail(email) {
-        return prismaClient.utilisateur.findUnique({
-            where: { email },
-        });
+    async create(data) {
+        const prismaClient = this.getPrismaClient();
+        try {
+            return await prismaClient.utilisateur.create({ data });
+        }
+        finally {
+            await prismaClient.$disconnect();
+        }
     }
-    findByEntreprise(entrepriseId) {
-        return prismaClient.utilisateur.findMany({
-            where: { entrepriseId },
-        });
+    async findByEmail(email) {
+        const prismaClient = this.getPrismaClient();
+        try {
+            return await prismaClient.utilisateur.findUnique({
+                where: { email },
+            });
+        }
+        finally {
+            await prismaClient.$disconnect();
+        }
     }
-    findById(id) {
-        return prismaClient.utilisateur.findUnique({
-            where: { id },
-            include: { entreprise: true }
-        });
+    async findByEntreprise(entrepriseId) {
+        const prismaClient = this.getPrismaClient();
+        try {
+            return await prismaClient.utilisateur.findMany({
+                where: { entrepriseId },
+            });
+        }
+        finally {
+            await prismaClient.$disconnect();
+        }
     }
-    update(id, data) {
-        return prismaClient.utilisateur.update({
-            where: { id },
-            data,
-        });
+    async findById(id) {
+        const prismaClient = this.getPrismaClient();
+        try {
+            return await prismaClient.utilisateur.findUnique({
+                where: { id },
+                include: { entreprise: true }
+            });
+        }
+        finally {
+            await prismaClient.$disconnect();
+        }
     }
-    delete(id) {
-        return prismaClient.utilisateur.delete({
-            where: { id },
-        });
+    async update(id, data) {
+        const prismaClient = this.getPrismaClient();
+        try {
+            return await prismaClient.utilisateur.update({
+                where: { id },
+                data,
+            });
+        }
+        finally {
+            await prismaClient.$disconnect();
+        }
+    }
+    async delete(id) {
+        const prismaClient = this.getPrismaClient();
+        try {
+            return await prismaClient.utilisateur.delete({
+                where: { id },
+            });
+        }
+        finally {
+            await prismaClient.$disconnect();
+        }
     }
 }
 //# sourceMappingURL=UserRepository.js.map

@@ -22,4 +22,8 @@ export class AuthService {
         return { token, user: { ...user, motDePasse: undefined } };
     }
 
+    async register(nom: string, email: string, motDePasse: string, nomEntreprise: string, adresseEntreprise: string, role?: string) {
+        return await this.authRepository.register(nom, email, motDePasse, nomEntreprise, adresseEntreprise, role);
+    }
+
 }

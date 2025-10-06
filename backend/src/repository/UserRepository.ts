@@ -1,44 +1,83 @@
 import { PrismaClient, type $Enums, type Utilisateur } from "@prisma/client";
 import type { IRepository } from "./IRepository.js";
 
-const prismaClient = new PrismaClient();
 export class UserRepository implements IRepository<Utilisateur> {
-  findAll(): Promise<Utilisateur[]> {
-    return prismaClient.utilisateur.findMany();
-  }
-  create(data: Omit<Utilisateur, "id">): Promise<Utilisateur> {
-    return prismaClient.utilisateur.create({ data });
+  private getPrismaClient() {
+    return new PrismaClient();
   }
 
-  findByEmail(email: string): Promise<Utilisateur | null> {
-    return prismaClient.utilisateur.findUnique({
-      where: { email },
-    });
+  async findAll(): Promise<Utilisateur[]> {
+    const prismaClient = this.getPrismaClient();
+    try {
+      return await prismaClient.utilisateur.findMany();
+    } finally {
+      await prismaClient.$disconnect();
+    }
   }
 
-  findByEntreprise(entrepriseId: number): Promise<Utilisateur[]> {
-    return prismaClient.utilisateur.findMany({
-      where: { entrepriseId },
-    });
+  async create(data: Omit<Utilisateur, "id">): Promise<Utilisateur> {
+    const prismaClient = this.getPrismaClient();
+    try {
+      return await prismaClient.utilisateur.create({ data });
+    } finally {
+      await prismaClient.$disconnect();
+    }
   }
 
-  findById(id: number): Promise<Utilisateur | null> {
-    return prismaClient.utilisateur.findUnique({
-      where: { id },
-      include: { entreprise: true }
-    });
+  async findByEmail(email: string): Promise<Utilisateur | null> {
+    const prismaClient = this.getPrismaClient();
+    try {
+      return await prismaClient.utilisateur.findUnique({
+        where: { email },
+      });
+    } finally {
+      await prismaClient.$disconnect();
+    }
   }
 
-  update(id: number, data: Partial<Utilisateur>): Promise<Utilisateur> {
-    return prismaClient.utilisateur.update({
-      where: { id },
-      data,
-    });
+  async findByEntreprise(entrepriseId: number): Promise<Utilisateur[]> {
+    const prismaClient = this.getPrismaClient();
+    try {
+      return await prismaClient.utilisateur.findMany({
+        where: { entrepriseId },
+      });
+    } finally {
+      await prismaClient.$disconnect();
+    }
   }
 
-  delete(id: number): Promise<Utilisateur> {
-    return prismaClient.utilisateur.delete({
-      where: { id },
-    });
+  async findById(id: number): Promise<Utilisateur | null> {
+    const prismaClient = this.getPrismaClient();
+    try {
+      return await prismaClient.utilisateur.findUnique({
+        where: { id },
+        include: { entreprise: true }
+      });
+    } finally {
+      await prismaClient.$disconnect();
+    }
+  }
+
+  async update(id: number, data: Partial<Utilisateur>): Promise<Utilisateur> {
+    const prismaClient = this.getPrismaClient();
+    try {
+      return await prismaClient.utilisateur.update({
+        where: { id },
+        data,
+      });
+    } finally {
+      await prismaClient.$disconnect();
+    }
+  }
+
+  async delete(id: number): Promise<Utilisateur> {
+    const prismaClient = this.getPrismaClient();
+    try {
+      return await prismaClient.utilisateur.delete({
+        where: { id },
+      });
+    } finally {
+      await prismaClient.$disconnect();
+    }
   }
 }

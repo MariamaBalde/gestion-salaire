@@ -9,6 +9,8 @@ payRunRouter.get("/", roleMiddleware(["SUPER_ADMIN", "ADMIN"]), (req, res) => pa
 payRunRouter.get("/:id", roleMiddleware(["SUPER_ADMIN", "ADMIN"]), (req, res) => payRunController.findById(req, res));
 payRunRouter.post("/", roleMiddleware(["SUPER_ADMIN", "ADMIN"]), (req, res) => payRunController.create(req, res));
 payRunRouter.put("/:id", roleMiddleware(["SUPER_ADMIN", "ADMIN"]), (req, res) => payRunController.update(req, res));
+payRunRouter.patch("/:id/approve", roleMiddleware(["SUPER_ADMIN", "ADMIN"]), (req, res) => payRunController.approve(req, res));
+payRunRouter.patch("/:id/close", roleMiddleware(["SUPER_ADMIN", "ADMIN"]), (req, res) => payRunController.close(req, res));
 payRunRouter.delete("/:id", roleMiddleware(["SUPER_ADMIN"]), (req, res) => payRunController.delete(req, res));
 export { payRunRouter };
 //# sourceMappingURL=PayRunRoute.js.map

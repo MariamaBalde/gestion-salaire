@@ -28,10 +28,24 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = async (email, password) => {
-    const response = await api.post('/auth/login', { email, motDePasse: password });
-    const { token, user: userData } = response.data;
-    localStorage.setItem('token', token);
-    setUser(userData);
+    try {
+      const response = await api.post('/auth/login', { 
+        email, 
+        motDePasse: password
+      });
+      
+      const { token, user: userData } = response.data;
+      if (!token || !userData) {
+        throw new Error('Invalid response from server');
+      }
+      
+      localStorage.setItem('token', token);
+      setUser(userData);
+      return userData;
+    } catch (error) {
+      console.error('Login error:', error.response || error);
+      throw error.response?.data?.message || error.message || 'Login failed';
+    }
   };
 
   const logout = () => {

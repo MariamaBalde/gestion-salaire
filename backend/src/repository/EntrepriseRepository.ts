@@ -1,21 +1,36 @@
 import { PrismaClient, type Entreprise } from "@prisma/client";
 
-const prismaClient = new PrismaClient();
-
 export class EntrepriseRepository {
+  private prismaClient: PrismaClient;
+
+  constructor() {
+    this.prismaClient = new PrismaClient();
+  }
+
   // 🔹 Création d’une entreprise
   async create(
     data: Omit<Entreprise, "id" | "createdAt" | "updatedAt">
   ): Promise<Entreprise> {
-    return prismaClient.entreprise.create({ data });
+    try {
+      return await this.prismaClient.entreprise.create({
+        data,
+        include: { employes: true, utilisateurs: true }
+      });
+    } finally {
+      await this.prismaClient.$disconnect();
+    }
   }
 
   // 🔹 Recherche par ID
   async findById(id: number): Promise<Entreprise | null> {
-    return prismaClient.entreprise.findUnique({
-      where: { id },
-      include: { employes: true, utilisateurs: true }
-    });
+    try {
+      return await this.prismaClient.entreprise.findUnique({
+        where: { id },
+        include: { employes: true, utilisateurs: true }
+      });
+    } finally {
+      await this.prismaClient.$disconnect();
+    }
   }
 
   // 🔹 Recherche avec filtres
@@ -24,25 +39,29 @@ export class EntrepriseRepository {
     createdById?: number;
     id?: number;
   }): Promise<Entreprise[]> {
-    const where: any = {};
+    try {
+      const where: any = {};
 
-    if (filters?.nom) {
-      where.nom = { contains: filters.nom };
+      if (filters?.nom) {
+        where.nom = { contains: filters.nom };
+      }
+
+      if (filters?.createdById) {
+        where.createdById = filters.createdById;
+      }
+
+      if (filters?.id) {
+        where.id = filters.id;
+      }
+
+      return await this.prismaClient.entreprise.findMany({
+        where,
+        include: { employes: true, utilisateurs: true },
+        orderBy: { createdAt: "desc" }
+      });
+    } finally {
+      await this.prismaClient.$disconnect();
     }
-
-    if (filters?.createdById) {
-      where.createdById = filters.createdById;
-    }
-
-    if (filters?.id) {
-      where.id = filters.id;
-    }
-
-    return prismaClient.entreprise.findMany({
-      where,
-      include: { employes: true, utilisateurs: true },
-      orderBy: { createdAt: "desc" }
-    });
   }
 
   // 🔹 Mise à jour d’une entreprise
@@ -50,17 +69,25 @@ export class EntrepriseRepository {
     id: number,
     data: Partial<Omit<Entreprise, "id" | "createdAt" | "updatedAt">>
   ): Promise<Entreprise> {
-    return prismaClient.entreprise.update({
-      where: { id },
-      data,
-      include: { employes: true, utilisateurs: true }
-    });
+    try {
+      return await this.prismaClient.entreprise.update({
+        where: { id },
+        data,
+        include: { employes: true, utilisateurs: true }
+      });
+    } finally {
+      await this.prismaClient.$disconnect();
+    }
   }
 
   // 🔹 Suppression
   async delete(id: number): Promise<Entreprise> {
-    return prismaClient.entreprise.delete({
-      where: { id }
-    });
+    try {
+      return await this.prismaClient.entreprise.delete({
+        where: { id }
+      });
+    } finally {
+      await this.prismaClient.$disconnect();
+    }
   }
 }

@@ -5,6 +5,7 @@ export declare class UserRepository implements IRepository<Utilisateur> {
     create(data: Omit<Utilisateur, "id">): Promise<Utilisateur>;
     findByEmail(email: string): Promise<Utilisateur | null>;
     findByEntreprise(entrepriseId: number): Promise<Utilisateur[]>;
+    findById(id: number): Promise<Utilisateur | null>;
     update(id: number, data: Partial<Utilisateur>): Promise<Utilisateur>;
     delete(id: number): Promise<Utilisateur>;
 }

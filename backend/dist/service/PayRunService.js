@@ -27,6 +27,28 @@ export class PayRunService {
     async delete(id) {
         return this.payRunRepository.delete(id);
     }
+    // 🔹 Approuver un cycle de paie
+    async approve(id) {
+        const payRun = await this.payRunRepository.findById(id);
+        if (!payRun) {
+            throw new Error("PayRun not found");
+        }
+        if (payRun.status !== 'BROUILLON') {
+            throw new Error("Only draft payruns can be approved");
+        }
+        return this.payRunRepository.update(id, { status: 'APPROUVE' });
+    }
+    // 🔹 Clôturer un cycle de paie
+    async close(id) {
+        const payRun = await this.payRunRepository.findById(id);
+        if (!payRun) {
+            throw new Error("PayRun not found");
+        }
+        if (payRun.status !== 'APPROUVE') {
+            throw new Error("Only approved payruns can be closed");
+        }
+        return this.payRunRepository.update(id, { status: 'CLOTURE' });
+    }
     // 🔹 Générer les bulletins automatiquement
     async generatePayslips(payRunId, entrepriseId) {
         const employees = await this.employeeRepository.findAll({ entrepriseId, actif: true });

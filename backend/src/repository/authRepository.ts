@@ -1,42 +1,54 @@
 import { PrismaClient, type Utilisateur } from "@prisma/client";
-
-const prismaClient = new PrismaClient();
+import bcrypt from "bcryptjs";
 
 export class AuthRepository {
-  async login(email: string, motDePasse: string): Promise<Utilisateur | null> {
-    return prismaClient.utilisateur.findUnique(
-        {
-           where: { email },
-           include: { entreprise: true }
-        }
-    );
+  private getPrismaClient() {
+    return new PrismaClient();
   }
 
-  async register(nom: string, email: string, motDePasse: string, nomEntreprise: string, adresseEntreprise: string): Promise<Utilisateur> {
-    const user = await prismaClient.utilisateur.create({
-      data: {
-        nom,
-        email,
-        motDePasse,
-        role: 'SUPER_ADMIN',
-      }
-    });
+  async login(email: string, motDePasse: string): Promise<Utilisateur | null> {
+    const prismaClient = this.getPrismaClient();
+    try {
+      return await prismaClient.utilisateur.findUnique({
+        where: { email },
+        include: { entreprise: true }
+      });
+    } finally {
+      await prismaClient.$disconnect();
+    }
+  }
 
-    const entreprise = await prismaClient.entreprise.create({
-      data: {
-        nom: nomEntreprise,
-        adresse: adresseEntreprise,
-        createdById: user.id,
-      }
-    });
+  async register(nom: string, email: string, motDePasse: string, nomEntreprise: string, adresseEntreprise: string, role: string = 'SUPER_ADMIN'): Promise<Utilisateur> {
+    const prismaClient = this.getPrismaClient();
+    try {
+      const hashedPassword = await bcrypt.hash(motDePasse, 10);
+      const user = await prismaClient.utilisateur.create({
+        data: {
+          nom,
+          email,
+          motDePasse: hashedPassword,
+          role: role as any,
+        }
+      });
 
-    // Update user with entrepriseId
-    const updatedUser = await prismaClient.utilisateur.update({
-      where: { id: user.id },
-      data: { entrepriseId: entreprise.id },
-      include: { entreprise: true }
-    });
+      const entreprise = await prismaClient.entreprise.create({
+        data: {
+          nom: nomEntreprise,
+          adresse: adresseEntreprise,
+          createdById: user.id,
+        }
+      });
 
-    return updatedUser;
+      // Update user with entrepriseId
+      const updatedUser = await prismaClient.utilisateur.update({
+        where: { id: user.id },
+        data: { entrepriseId: entreprise.id },
+        include: { entreprise: true }
+      });
+
+      return updatedUser;
+    } finally {
+      await prismaClient.$disconnect();
+    }
   }
 }

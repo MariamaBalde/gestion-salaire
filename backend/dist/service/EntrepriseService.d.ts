@@ -1,7 +1,7 @@
 import type { Entreprise } from "@prisma/client";
 export declare class EntrepriseService {
     private entrepriseRepository;
-    create(data: Omit<Entreprise, "id" | "createdAt" | "updatedAt">, createdById?: number): Promise<Entreprise>;
+    create(data: Omit<Entreprise, "id" | "createdAt" | "updatedAt" | "createdById" | "logo">, createdById?: number): Promise<Entreprise>;
     findById(id: number): Promise<Entreprise | null>;
     findAll(filters?: {
         nom?: string;

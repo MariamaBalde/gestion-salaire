@@ -10,6 +10,7 @@ export class PDFService {
       brut: number;
       deductions: number;
       net: number;
+      payments: { montant: number }[];
     };
     createdBy?: { nom: string };
   }): Promise<Buffer> {
@@ -44,6 +45,9 @@ export class PDFService {
       // Détails du paiement
       doc.text(`Montant payé: ${payment.montant} ${payment.payslip.payRun.entreprise.devise}`);
       doc.text(`Mode de paiement: ${this.formatPaymentMode(payment.modePaiement)}`);
+      if (payment.reference) {
+        doc.text(`Référence: ${payment.reference}`);
+      }
       doc.text(`Date du paiement: ${payment.date.toLocaleDateString()}`);
       doc.moveDown();
 
@@ -52,6 +56,11 @@ export class PDFService {
       doc.text(`Salaire brut: ${payment.payslip.brut} ${payment.payslip.payRun.entreprise.devise}`);
       doc.text(`Déductions: ${payment.payslip.deductions} ${payment.payslip.payRun.entreprise.devise}`);
       doc.text(`Salaire net: ${payment.payslip.net} ${payment.payslip.payRun.entreprise.devise}`);
+
+      // Calculer le solde restant
+      const totalPaid = payment.payslip.payments?.reduce((sum, p) => sum + p.montant, 0) || 0;
+      const remaining = payment.payslip.net - totalPaid;
+      doc.text(`Solde restant: ${remaining} ${payment.payslip.payRun.entreprise.devise}`);
       doc.moveDown();
 
       // Signature

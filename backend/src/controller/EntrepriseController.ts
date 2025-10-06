@@ -9,9 +9,22 @@ export class EntrepriseController {
   async create(req: Request, res: Response): Promise<void> {
     try {
       const validatedData = entrepriseSchema.parse(req.body);
-      const entreprise = await this.entrepriseService.create(validatedData, (req.user as any).id);
+      const logoPath = (req as any).file
+        ? `uploads/logos/${(req as any).file.filename}`
+        : null;
+
+      const entreprise = await this.entrepriseService.create({
+        nom: validatedData.nom,
+        adresse: validatedData.adresse,
+        devise: validatedData.devise || "XOF",
+        typePeriode: validatedData.typePeriode || "MENSUELLE",
+        logo: logoPath,
+        createdById: (req.user as any)?.id || null
+      });
+
       res.status(201).json(entreprise);
     } catch (error: any) {
+      console.error('Create error:', error);
       res.status(400).json({ message: error.message });
     }
   }
@@ -66,10 +79,31 @@ export class EntrepriseController {
 
   async update(req: Request, res: Response): Promise<void> {
     try {
-      const { id } = req.params;
-      const entreprise = await this.entrepriseService.update(Number(id), req.body);
+      const { id } = req.params as { id: string };
+      const numericId = parseInt(id, 10);
+
+      if (isNaN(numericId)) {
+        res.status(400).json({ message: "Invalid ID format" });
+        return;
+      }
+
+      const updateData: any = {};
+
+      if (req.body.nom !== undefined) updateData.nom = req.body.nom;
+      if (req.body.adresse !== undefined) updateData.adresse = req.body.adresse;
+      if (req.body.devise !== undefined) updateData.devise = req.body.devise;
+      if (req.body.typePeriode !== undefined) updateData.typePeriode = req.body.typePeriode;
+
+      if ((req as any).file) {
+        updateData.logo = `uploads/logos/${(req as any).file.filename}`;
+      } else if (req.body.logo === null) {
+        updateData.logo = null;
+      }
+
+      const entreprise = await this.entrepriseService.update(numericId, updateData);
       res.json(entreprise);
     } catch (error: any) {
+      console.error('Update error:', error);
       res.status(400).json({ message: error.message });
     }
   }

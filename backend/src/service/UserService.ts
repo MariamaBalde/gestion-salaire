@@ -2,6 +2,15 @@ import type { Utilisateur, Prisma } from "@prisma/client";
 import { UserRepository } from "../repository/UserRepository.js";
 import bcrypt from "bcryptjs";
 
+interface CreateUserInput {
+  nom: string;
+  email: string;
+  motDePasse: string;
+  role: string;
+  entrepriseId?: number;
+  actif?: boolean;
+}
+
 export class UserService {
   private userRepository = new UserRepository();
 
@@ -20,17 +29,11 @@ export class UserService {
     return this.userRepository.findByEntreprise(entrepriseId);
   }
 
-  async create(data: {
-    nom: string;
-    email: string;
-    motDePasse: string;
-    role: string;
-    entrepriseId?: number;
-  }): Promise<Utilisateur> {
+  async create(data: CreateUserInput): Promise<Utilisateur> {
     console.log("Creating user with data:", data);
     const userexiste = await this.userRepository.findByEmail(data.email);
     if (userexiste) {
-        throw new Error ("L utilisateur avec cet email existe deja");
+        throw new Error("L'utilisateur avec cet email existe déjà");
     }
     const passwordHashe = await bcrypt.hash(data.motDePasse, 10);
     const userCreer = {
@@ -38,7 +41,7 @@ export class UserService {
         email: data.email,
         motDePasse: passwordHashe,
         role: data.role as any,
-        actif: true,
+        actif: data.actif ?? true,
         entrepriseId: data.entrepriseId || null
     } as Omit<Utilisateur, "id">
     console.log("User data to create:", userCreer);

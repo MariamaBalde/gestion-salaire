@@ -1,7 +1,10 @@
 import type { Payment } from "@prisma/client";
 export declare class PaymentService {
     private paymentRepository;
-    create(data: Omit<Payment, "id" | "createdAt" | "updatedAt" | "createdById">, createdById?: number): Promise<Payment>;
+    create(data: Omit<Payment, "id" | "createdAt" | "updatedAt" | "createdById">, createdById?: number): Promise<{
+        payment: Payment;
+        payslip: any;
+    }>;
     findById(id: number): Promise<Payment | null>;
     findAll(filters?: {
         payslipId?: number;

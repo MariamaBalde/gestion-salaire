@@ -4,8 +4,10 @@ export const registerSchema = z.object({
   nom: z.string().min(1, 'Le nom est requis'),
   email: z.string().email('Email invalide'),
   motDePasse: z.string().min(6, 'Le mot de passe doit contenir au moins 6 caractères'),
-  role: z.string().refine(val => ['SUPER_ADMIN', 'ADMIN', 'CAISSIER', 'EMPLOYE'].includes(val), 'Rôle invalide'),
+  role: z.string().refine(val => ['SUPER_ADMIN', 'ADMIN', 'CAISSIER', 'EMPLOYE'].includes(val), 'Rôle invalide').optional(),
   entrepriseId: z.number().optional(),
+  nomEntreprise: z.string().optional(),
+  adresseEntreprise: z.string().optional(),
 });
 
 
@@ -17,8 +19,9 @@ export const loginSchema = z.object({
 export const entrepriseSchema = z.object({
   nom: z.string().min(1, 'Le nom est requis'),
   adresse: z.string().min(1, 'L\'adresse est requise'),
-  devise: z.string().default('XOF'),
-  typePeriode: z.enum(['MENSUELLE', 'HEBDOMADAIRE', 'JOURNALIERE']).default('MENSUELLE'),
+  devise: z.string().optional(),
+  typePeriode: z.enum(['MENSUELLE', 'HEBDOMADAIRE', 'JOURNALIERE']).optional(),
+  logo: z.string().nullable().optional()
 });
 
 export const payRunSchema = z.object({

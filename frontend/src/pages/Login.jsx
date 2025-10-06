@@ -5,18 +5,36 @@ import { useAuth } from '../context/AuthContext';
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    console.log('Submitting with:', { email, password });
+
+    setErrors({});
+
     setLoading(true);
     try {
       await login(email, password);
       navigate('/dashboard');
     } catch (error) {
       console.error('Login failed:', error);
+
+      if (error.response?.data?.message) {
+        setErrors({ general: error.response.data.message });
+      } else if (error.response?.status === 400) {
+        setErrors({ general: 'Email ou mot de passe incorrect' });
+      } else if (error.response?.status === 404) {
+        setErrors({ general: 'Compte utilisateur non trouvé' });
+      } else if (error.response?.status === 422) {
+        setErrors({ general: 'Données de connexion invalides' });
+      } else {
+        setErrors({ general: 'Une erreur est survenue lors de la connexion. Veuillez réessayer.' });
+      }
     } finally {
       setLoading(false);
     }
@@ -36,7 +54,7 @@ export default function Login() {
           <p className="text-[#575D6E] mt-2">Connectez-vous à votre compte</p>
         </div>
         
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6" noValidate>
           <div className="space-y-4">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-[#242F57]">Email</label>
@@ -50,12 +68,25 @@ export default function Login() {
                   id="email"
                   name="email"
                   type="email"
-                  required
-                  className="pl-10 w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:ring-[#4263EB] focus:border-[#4263EB] text-sm"
+                  className={`pl-10 w-full px-3 py-2.5 border rounded-xl focus:ring-[#4263EB] focus:border-[#4263EB] text-sm ${
+                    errors.email ? 'border-red-500' : 'border-gray-200'
+                  }`}
                   placeholder="votre.email@exemple.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (errors.email) {
+                      setErrors({ ...errors, email: '' });
+                    }
+                  }}
+                  onBlur={() => {
+                    // Clear any previous email errors when user focuses out
+                    if (errors.email) {
+                      setErrors({ ...errors, email: '' });
+                    }
+                  }}
                 />
+                {errors.email && <p className="mt-1 text-sm text-red-600 pl-10">{errors.email}</p>}
               </div>
             </div>
             
@@ -71,12 +102,26 @@ export default function Login() {
                   id="password"
                   name="password"
                   type="password"
-                  required
-                  className="pl-10 w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:ring-[#4263EB] focus:border-[#4263EB] text-sm"
+                  autoComplete="current-password"
+                  className={`pl-10 w-full px-3 py-2.5 border rounded-xl focus:ring-[#4263EB] focus:border-[#4263EB] text-sm ${
+                    errors.motDePasse ? 'border-red-500' : 'border-gray-200'
+                  }`}
                   placeholder="********"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (errors.motDePasse) {
+                      setErrors({ ...errors, motDePasse: '' });
+                    }
+                  }}
+                  onBlur={() => {
+                    // Clear any previous password errors when user focuses out
+                    if (errors.motDePasse) {
+                      setErrors({ ...errors, motDePasse: '' });
+                    }
+                  }}
                 />
+                {errors.motDePasse && <p className="mt-1 text-sm text-red-600 pl-10">{errors.motDePasse}</p>}
               </div>
             </div>
           </div>
@@ -100,6 +145,12 @@ export default function Login() {
             </div>
           </div>
 
+          {errors.general && (
+            <div className="text-red-600 text-sm text-center">
+              {errors.general}
+            </div>
+          )}
+
           <div>
             <button
               type="submit"
@@ -110,12 +161,12 @@ export default function Login() {
             </button>
           </div>
 
-          <div className="text-center text-sm">
+          {/* <div className="text-center text-sm">
             <span className="text-[#575D6E]">Pas encore de compte ? </span>
             <Link to="/register" className="font-medium text-[#4263EB] hover:text-[#2a4bdb]">
               Inscrivez-vous
             </Link>
-          </div>
+          </div> */}
         </form>
       </div>
     </div>

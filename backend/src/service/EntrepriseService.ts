@@ -1,20 +1,33 @@
 import { EntrepriseRepository } from "../repository/EntrepriseRepository.js";
-import type { Entreprise } from "@prisma/client";
+import type { Entreprise, TypePeriode } from "@prisma/client";
+
+interface EntrepriseCreateInput {
+  nom: string;
+  adresse: string;
+  devise: string;
+  typePeriode: TypePeriode;
+  logo: string | null;
+  createdById: number | null;
+}
+
+interface EntrepriseUpdateInput {
+  nom?: string;
+  adresse?: string;
+  devise?: string;
+  typePeriode?: TypePeriode;
+  logo?: string | null;
+}
 
 export class EntrepriseService {
   private entrepriseRepository = new EntrepriseRepository();
 
   // 🔹 Création d’une entreprise
-  async create(
-    data: Omit<Entreprise, "id" | "createdAt" | "updatedAt" | "createdById" | "logo">,
-    createdById?: number
-  ): Promise<Entreprise> {
+  async create(data: EntrepriseCreateInput): Promise<Entreprise> {
     return this.entrepriseRepository.create({
       ...data,
-      logo: null,
       devise: data.devise || "XOF",
       typePeriode: data.typePeriode || "MENSUELLE",
-      createdById: createdById || null
+      logo: data.logo || null,
     });
   }
 
@@ -30,11 +43,15 @@ export class EntrepriseService {
     return this.entrepriseRepository.findAll(filters);
   }
 
-  async update(
-    id: number,
-    data: Partial<Omit<Entreprise, "id" | "createdAt" | "updatedAt">>
-  ): Promise<Entreprise> {
-    return this.entrepriseRepository.update(id, data);
+  async update(id: number, data: EntrepriseUpdateInput): Promise<Entreprise> {
+    const updateData = { ...data };
+    
+    // Validate and clean up data
+    if (updateData.logo === undefined) {
+      delete updateData.logo;
+    }
+
+    return this.entrepriseRepository.update(id, updateData);
   }
 
   async delete(id: number): Promise<Entreprise> {

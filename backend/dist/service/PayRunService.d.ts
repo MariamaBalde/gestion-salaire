@@ -11,6 +11,8 @@ export declare class PayRunService {
     }): Promise<PayRun[]>;
     update(id: number, data: Partial<Omit<PayRun, "id" | "createdAt" | "updatedAt">>): Promise<PayRun>;
     delete(id: number): Promise<PayRun>;
+    approve(id: number): Promise<PayRun>;
+    close(id: number): Promise<PayRun>;
     private generatePayslips;
 }
 //# sourceMappingURL=PayRunService.d.ts.map

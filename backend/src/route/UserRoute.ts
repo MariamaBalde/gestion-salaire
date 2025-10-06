@@ -7,9 +7,9 @@ const userController = new UserController();
 
 export const userRouter = Router();
 
-userRouter.use(authMiddleware);
+userRouter.post("/inscription", (req, res) => userController.Inscription(req, res));
 
-userRouter.post("/inscription", roleMiddleware(["SUPER_ADMIN", "ADMIN"]), (req, res) => userController.Inscription(req, res));
+userRouter.use(authMiddleware);
 
 userRouter.get("/", (req, res) => userController.getAll(req, res));
 

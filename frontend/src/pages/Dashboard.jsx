@@ -1,105 +1,85 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Building, TrendingUp, DollarSign, Users, Activity, Clock } from 'lucide-react';
 import Table from "../components/Table";
 import Badge from "../components/Badge";
 import api from "../api";
 import { useAuth } from "../context/AuthContext";
+import SuperAdminDashboard from "./SuperAdminDashboard";
+import CashierDashboard from "./CashierDashboard";
 
 export default function Dashboard() {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const entrepriseId = searchParams.get("entrepriseId");
-  const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [enterpriseName, setEnterpriseName] = useState("");
   const [enterprise, setEnterprise] = useState(null);
   const [stats, setStats] = useState({
-    totalSalaire: 0,
+    masseSalariale: 0,
     montantPaye: 0,
-    montantRestant: 0,
+    montantRestant: 0, 
     employesActifs: 0,
   });
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    console.log("Auth token:", token);
-  }, []);
+  const [payrollEvolution, setPayrollEvolution] = useState([]);
+  const [upcomingPayments, setUpcomingPayments] = useState([]);
 
   useEffect(() => {
     const loadData = async () => {
+      if (!entrepriseId && !user?.entrepriseId) return;
+      
       setLoading(true);
       try {
-        let enterpriseData;
-        let employeesData;
-
-        console.log("Loading dashboard data...");
-        console.log("entrepriseId:", entrepriseId);
-        console.log("user:", user);
-
+        const queryParams = new URLSearchParams();
         if (entrepriseId) {
-          console.log("Fetching data for specific enterprise...");
-          const [enterpriseResponse, employeesResponse] = await Promise.all([
-            api.get(`/entreprises/${entrepriseId}`),
-            api.get(`/employees?entrepriseId=${entrepriseId}`),
-          ]);
-          console.log("Enterprise response:", enterpriseResponse.data);
-          console.log("Employees response:", employeesResponse.data);
-          enterpriseData = enterpriseResponse.data;
-          employeesData = employeesResponse.data;
-        } else if (user?.entrepriseId) {
-          console.log("Fetching data for user enterprise...");
-          const [enterpriseResponse, employeesResponse] = await Promise.all([
-            api.get(`/entreprises/${user.entrepriseId}`),
-            api.get("/employees"),
-          ]);
-          console.log("Enterprise response:", enterpriseResponse.data);
-          console.log("Employees response:", employeesResponse.data);
-          enterpriseData = enterpriseResponse.data;
-          employeesData = employeesResponse.data;
+          queryParams.append('entrepriseId', entrepriseId);
         }
 
-        if (enterpriseData) {
-          console.log("Setting enterprise data:", enterpriseData);
-          setEnterprise(enterpriseData);
-          setEnterpriseName(enterpriseData.nom);
+        const [dashboardResponse, enterpriseResponse] = await Promise.all([
+          api.get(`/dashboard/data?${queryParams.toString()}`),
+          entrepriseId
+            ? api.get(`/entreprises/${entrepriseId}`)
+            : user?.entrepriseId
+              ? api.get(`/entreprises/${user.entrepriseId}`)
+              : Promise.resolve({ data: null })
+        ]);
+
+        const { kpis, evolution, upcomingPayments: payments } = dashboardResponse.data;
+        
+        setStats(kpis);
+        setPayrollEvolution(evolution);
+        setUpcomingPayments(payments);
+
+        if (enterpriseResponse.data) {
+          setEnterprise(enterpriseResponse.data);
+          setEnterpriseName(enterpriseResponse.data.nom);
         }
 
-        if (employeesData) {
-          console.log("Setting employees data:", employeesData);
-          setEmployees(employeesData); 
-
-          const activeEmployees = employeesData.filter((emp) => emp.actif);
-          const totalSalaire = employeesData.reduce(
-            (sum, emp) => sum + parseFloat(emp.tauxSalaire || 0),
-            0
-          );
-
-          const montantPaye = totalSalaire * 0.75;
-          const montantRestant = totalSalaire - montantPaye;
-
-          const newStats = {
-            totalSalaire,
-            montantPaye,
-            montantRestant,
-            employesActifs: activeEmployees.length,
-          };
-          console.log("Setting stats:", newStats);
-          setStats(newStats);
-        }
       } catch (error) {
         console.error("Error loading dashboard data:", error);
-        console.error("Error details:", error.response?.data);
       } finally {
         setLoading(false);
       }
     };
 
-    if (entrepriseId || user?.entrepriseId) {
-      loadData();
-    }
+    loadData();
   }, [entrepriseId, user]);
 
-  if (!enterprise && !loading) {
+  // Redirections conditionnelles après les hooks
+  if (user?.role === 'SUPER_ADMIN' && !entrepriseId) {
+    return <SuperAdminDashboard />;
+  }
+
+  if (user?.role === 'CAISSIER') {
+    return <CashierDashboard />;
+  }
+
+  if (loading) {
+    return <div className="p-6 text-center">Chargement...</div>;
+  }
+
+  if (!enterprise) {
     return (
       <div className="p-6 text-center">
         <p className="text-gray-500">Aucune donnée d'entreprise disponible</p>
@@ -107,179 +87,191 @@ export default function Dashboard() {
     );
   }
 
-  if (loading) {
-    return <div className="p-6 text-center">Chargement...</div>;
-  }
-
-  const welcomeMessage =
-    user?.role === "SUPER_ADMIN"
-      ? `Vue d'ensemble de ${enterpriseName}`
-      : `Bienvenue, Administrateur de ${enterpriseName}`;
-
-  const subtitle =
-    user?.role === "SUPER_ADMIN"
-      ? `Détails de l'entreprise`
-      : `Tableau de bord`;
-
   return (
-    <div className="p-6 bg-[#F8F9FF]">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-semibold text-[#242F57]">
-            {welcomeMessage}
-          </h1>
-          <p className="text-[#575D6E]">{subtitle}</p>
-        </div>
-        <div className="flex items-center space-x-4">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Rechercher..."
-              className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4263EB]"
-            />
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5 text-gray-400 absolute left-3 top-2.5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-          </div>
-          <div className="relative">
-            <button className="p-2 bg-white rounded-full shadow-sm">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6 text-gray-500"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                />
-              </svg>
-              <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {enterprise && (
-        <div className="mb-8">
-          <div className="bg-white p-6 rounded-2xl shadow-sm">
-            <h3 className="text-lg font-medium text-[#242F57] mb-4">
-              Informations de l'entreprise
-            </h3>
-            <div className="grid grid-cols-2 gap-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <div className="p-6">
+        {/* En-tête */}
+        <div className="bg-white shadow-lg border-b border-gray-200 rounded-xl mb-6">
+          <div className="p-6">
+            <div className="flex justify-between items-center">
               <div>
-                <p className="text-sm text-[#575D6E]">Nom:</p>
-                <p className="font-medium">{enterprise.nom}</p>
+                <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+                  <Building className="h-8 w-8 text-blue-600 mr-3" />
+                  {user?.role === "SUPER_ADMIN" 
+                    ? `Vue d'ensemble de ${enterpriseName}`
+                    : `Bienvenue, Administrateur de ${enterpriseName}`
+                  }
+                </h1>
+                <p className="text-gray-600 mt-1">
+                  {user?.role === "SUPER_ADMIN" 
+                    ? `Détails de l'entreprise`
+                    : `Tableau de bord`
+                  }
+                </p>
               </div>
-              <div>
-                <p className="text-sm text-[#575D6E]">Adresse:</p>
-                <p className="font-medium">{enterprise.adresse}</p>
-              </div>
-              <div>
-                <p className="text-sm text-[#575D6E]">Devise:</p>
-                <p className="font-medium">{enterprise.devise}</p>
-              </div>
-              <div>
-                <p className="text-sm text-[#575D6E]">Type de période:</p>
-                <p className="font-medium">{enterprise.typePeriode}</p>
+              <div className="text-sm text-gray-500">
+                Dernière mise à jour: {new Date().toLocaleString()}
               </div>
             </div>
           </div>
         </div>
-      )}
 
-      {/* Stats Cards avec les vraies valeurs */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <StatCard
-          title="Masse salariale totale"
-          value={`${stats.totalSalaire.toLocaleString()} FCFA`}
-          icon="money"
-          trend="+12%"
-          color="blue"
-        />
-        <StatCard
-          title="Montant payé"
-          value={`${stats.montantPaye.toLocaleString()} FCFA`}
-          icon="check"
-          trend="+8%"
-          color="green"
-        />
-        <StatCard
-          title="Montant restant"
-          value={`${stats.montantRestant.toLocaleString()} FCFA`}
-          icon="clock"
-          trend="En attente"
-          color="orange"
-        />
-        <StatCard
-          title="Employés actifs"
-          value={stats.employesActifs}
-          icon="users"
-          trend="Actifs"
-          color="purple"
-        />
-      </div>
-
-      {/* Table des employés */}
-      <div className="bg-white p-6 rounded-2xl shadow-sm">
-        <h2 className="text-lg font-semibold text-[#242F57] mb-4">
-          Liste des employés
-        </h2>
-        {employees.length > 0 ? (
-          <Table
-            headers={[
-              "Nom complet",
-              "Poste",
-              "Contrat",
-              "Salaire",
-              "Statut",
-              "Entreprise", // Toujours inclure la colonne entreprise
-            ]}
-            data={employees}
-            renderRow={(employee) => (
-              <tr key={employee.id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  {employee.nomComplet}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {employee.poste}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {employee.typeContrat}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {parseInt(employee.tauxSalaire).toLocaleString()} FCFA
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <Badge variant={employee.actif ? "active" : "inactive"}>
-                    {employee.actif ? "Actif" : "Inactif"}
-                  </Badge>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {employee.entreprise?.nom || "-"}
-                </td>
-              </tr>
-            )}
-          />
-        ) : (
-          <div className="text-center py-8 text-gray-500">
-            Aucun employé trouvé
+        {/* Cartes KPI */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {/* Masse Salariale */}
+          <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Masse Salariale</p>
+                <p className="text-3xl font-bold text-gray-900">
+                  {Math.round(stats.masseSalariale).toLocaleString()} FCFA
+                </p>
+              </div>
+              <DollarSign className="h-8 w-8 text-blue-500" />
+            </div>
+            <div className="mt-4 flex items-center">
+              <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
+              <span className="text-sm text-green-600">+12% ce mois</span>
+            </div>
           </div>
-        )}
+
+          {/* Montant Payé */}
+          <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Montant Payé</p>
+                <p className="text-3xl font-bold text-gray-900">
+                  {Math.round(stats.montantPaye).toLocaleString()} FCFA
+                </p>
+              </div>
+              <Activity className="h-8 w-8 text-green-500" />
+            </div>
+            <div className="mt-4 flex items-center">
+              <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
+              <span className="text-sm text-green-600">+8% ce mois</span>
+            </div>
+          </div>
+
+          {/* Montant Restant */}
+          <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-orange-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Montant Restant</p>
+                <p className="text-3xl font-bold text-gray-900">
+                  {Math.round(stats.montantRestant).toLocaleString()} FCFA
+                </p>
+              </div>
+              <Clock className="h-8 w-8 text-orange-500" />
+            </div>
+            <div className="mt-4 flex items-center">
+              <Activity className="h-4 w-4 text-orange-500 mr-1" />
+              <span className="text-sm text-orange-600">En attente</span>
+            </div>
+          </div>
+
+          {/* Employés Actifs */}
+          <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-purple-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Employés Actifs</p>
+                <p className="text-3xl font-bold text-gray-900">{stats.employesActifs}</p>
+              </div>
+              <Users className="h-8 w-8 text-purple-500" />
+            </div>
+            <div className="mt-4 flex items-center">
+              <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
+              <span className="text-sm text-green-600">+5% ce mois</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Graphiques et tableaux */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          {/* Évolution de la masse salariale */}
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+              <TrendingUp className="h-6 w-6 text-blue-600 mr-2" />
+              Évolution de la Masse Salariale
+            </h3>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={payrollEvolution}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="month" stroke="#6b7280" />
+                  <YAxis 
+                    stroke="#6b7280" 
+                    tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M`}
+                  />
+                  <Tooltip 
+                    formatter={(value) => [`${(value / 1000000).toFixed(1)}M FCFA`, 'Masse Salariale']}
+                    labelFormatter={(label) => `Mois: ${label}`}
+                  />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="masseSalariale"
+                    stroke="#4263EB"
+                    strokeWidth={3}
+                    dot={{ fill: '#4263EB', strokeWidth: 2, r: 6 }}
+                    name="Masse Salariale"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Prochains paiements */}
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+              <Clock className="h-6 w-6 text-orange-600 mr-2" />
+              Prochains Paiements
+            </h3>
+            {upcomingPayments.length > 0 ? (
+              <div className="overflow-hidden">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Employé
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Montant
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Échéance
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Statut
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {upcomingPayments.map((payment) => (
+                      <tr key={payment.id}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {payment.employeeName}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {payment.montant.toLocaleString()} FCFA
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {new Date(payment.dateEcheance).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <Badge variant={payment.status === 'ATTENTE' ? 'warning' : 'success'}>
+                            {payment.status}
+                          </Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="text-gray-500 text-center py-4">Aucun paiement en attente</p>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -87,5 +87,27 @@ export class PayRunController {
             res.status(400).json({ message: error.message });
         }
     }
+    // 🔹 Approuver un cycle de paie
+    async approve(req, res) {
+        try {
+            const { id } = req.params;
+            const payRun = await this.payRunService.approve(Number(id));
+            res.json(payRun);
+        }
+        catch (error) {
+            res.status(400).json({ message: error.message });
+        }
+    }
+    // 🔹 Clôturer un cycle de paie
+    async close(req, res) {
+        try {
+            const { id } = req.params;
+            const payRun = await this.payRunService.close(Number(id));
+            res.json(payRun);
+        }
+        catch (error) {
+            res.status(400).json({ message: error.message });
+        }
+    }
 }
 //# sourceMappingURL=PayRunController.js.map

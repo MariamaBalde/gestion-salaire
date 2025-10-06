@@ -1,21 +1,33 @@
 import { PrismaClient, type PayRun } from "@prisma/client";
 
-const prismaClient = new PrismaClient();
-
 export class PayRunRepository {
+  private getPrismaClient() {
+    return new PrismaClient();
+  }
+
   // 🔹 Création d’un cycle de paie
   async create(
     data: Omit<PayRun, "id" | "createdAt" | "updatedAt">
   ): Promise<PayRun> {
-    return prismaClient.payRun.create({ data });
+    const prismaClient = this.getPrismaClient();
+    try {
+      return await prismaClient.payRun.create({ data });
+    } finally {
+      await prismaClient.$disconnect();
+    }
   }
 
   // 🔹 Recherche par ID
   async findById(id: number): Promise<PayRun | null> {
-    return prismaClient.payRun.findUnique({
-      where: { id },
-      include: { payslips: { include: { employee: true, payments: true } }, entreprise: true, createdBy: true }
-    });
+    const prismaClient = this.getPrismaClient();
+    try {
+      return await prismaClient.payRun.findUnique({
+        where: { id },
+        include: { payslips: { include: { employee: true, payments: true } }, entreprise: true, createdBy: true }
+      });
+    } finally {
+      await prismaClient.$disconnect();
+    }
   }
 
   // 🔹 Recherche avec filtres
@@ -24,25 +36,30 @@ export class PayRunRepository {
     status?: string;
     createdById?: number;
   }): Promise<PayRun[]> {
-    const where: any = {};
+    const prismaClient = this.getPrismaClient();
+    try {
+      const where: any = {};
 
-    if (filters?.entrepriseId) {
-      where.entrepriseId = filters.entrepriseId;
+      if (filters?.entrepriseId) {
+        where.entrepriseId = filters.entrepriseId;
+      }
+
+      if (filters?.status) {
+        where.status = filters.status;
+      }
+
+      if (filters?.createdById) {
+        where.createdById = filters.createdById;
+      }
+
+      return await prismaClient.payRun.findMany({
+        where,
+        include: { payslips: { include: { employee: true, payments: true } }, entreprise: true, createdBy: true },
+        orderBy: { createdAt: "desc" }
+      });
+    } finally {
+      await prismaClient.$disconnect();
     }
-
-    if (filters?.status) {
-      where.status = filters.status;
-    }
-
-    if (filters?.createdById) {
-      where.createdById = filters.createdById;
-    }
-
-    return prismaClient.payRun.findMany({
-      where,
-      include: { payslips: { include: { employee: true, payments: true } }, entreprise: true, createdBy: true },
-      orderBy: { createdAt: "desc" }
-    });
   }
 
   // 🔹 Mise à jour d’un cycle de paie
@@ -50,17 +67,27 @@ export class PayRunRepository {
     id: number,
     data: Partial<Omit<PayRun, "id" | "createdAt" | "updatedAt">>
   ): Promise<PayRun> {
-    return prismaClient.payRun.update({
-      where: { id },
-      data,
-      include: { payslips: { include: { employee: true, payments: true } }, entreprise: true, createdBy: true }
-    });
+    const prismaClient = this.getPrismaClient();
+    try {
+      return await prismaClient.payRun.update({
+        where: { id },
+        data,
+        include: { payslips: { include: { employee: true, payments: true } }, entreprise: true, createdBy: true }
+      });
+    } finally {
+      await prismaClient.$disconnect();
+    }
   }
 
   // 🔹 Suppression
   async delete(id: number): Promise<PayRun> {
-    return prismaClient.payRun.delete({
-      where: { id }
-    });
+    const prismaClient = this.getPrismaClient();
+    try {
+      return await prismaClient.payRun.delete({
+        where: { id }
+      });
+    } finally {
+      await prismaClient.$disconnect();
+    }
   }
 }
