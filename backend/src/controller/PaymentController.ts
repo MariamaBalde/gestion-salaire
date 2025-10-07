@@ -10,6 +10,10 @@ export class PaymentController {
   async create(req: Request, res: Response): Promise<void> {
     try {
       const user = req.user as any;
+      if (user.role !== 'CAISSIER') {
+        res.status(403).json({ message: "Access denied. Only cashiers can create payments." });
+        return;
+      }
       const result = await this.paymentService.create(req.body, user.id);
       res.status(201).json(result);
     } catch (error: any) {
@@ -86,6 +90,12 @@ export class PaymentController {
   // 🔹 Générer et télécharger le reçu PDF
   async generateReceipt(req: Request, res: Response): Promise<void> {
     try {
+      const user = req.user as any;
+      if (user.role !== 'CAISSIER') {
+        res.status(403).json({ message: "Access denied. Only cashiers can generate receipts." });
+        return;
+      }
+
       const { id } = req.params;
       const payment = await this.paymentService.findById(Number(id));
 
@@ -94,9 +104,7 @@ export class PaymentController {
         return;
       }
 
-      const user = req.user as any;
-      if ((user.role === 'ADMIN' || user.role === 'CAISSIER') &&
-          (payment as any).payslip.employee.entrepriseId !== user.entrepriseId) {
+      if ((payment as any).payslip.employee.entrepriseId !== user.entrepriseId) {
         res.status(403).json({ message: "Access denied" });
         return;
       }
@@ -114,9 +122,14 @@ export class PaymentController {
   // 🔹 Générer et télécharger la liste des paiements PDF par période
   async generatePaymentList(req: Request, res: Response): Promise<void> {
     try {
+      const user = req.user as any;
+      if (user.role !== 'CAISSIER') {
+        res.status(403).json({ message: "Access denied. Only cashiers can generate payment lists." });
+        return;
+      }
+
       const { startDate, endDate, entrepriseId } = req.query;
       const filters: any = {};
-      const user = req.user as any;
 
       if (startDate && endDate) {
         filters.dateRange = {
@@ -127,7 +140,7 @@ export class PaymentController {
 
       if (entrepriseId) {
         filters.entrepriseId = parseInt(entrepriseId as string);
-      } else if (user.role === 'ADMIN' || user.role === 'CAISSIER') {
+      } else {
         filters.entrepriseId = user.entrepriseId;
       }
 

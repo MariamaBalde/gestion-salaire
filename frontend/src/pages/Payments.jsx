@@ -294,7 +294,7 @@ export default function Payments() {
         </td>
         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
           <div className="flex space-x-2">
-            {payslip.payRun?.status === 'BROUILLON' && user?.role !== 'CAISSIER' && (
+            {payslip.payRun?.status === 'BROUILLON' && user?.role === 'ADMIN' && (
               <Button
                 onClick={() => openEditModal(payslip)}
                 size="sm"
@@ -303,7 +303,7 @@ export default function Payments() {
                 Modifier
               </Button>
             )}
-            {payslip.status !== 'PAYE' && (
+            {payslip.status !== 'PAYE' && user?.role === 'CAISSIER' && (
               <Button onClick={() => openPaymentModal(payslip)} size="sm">
                 Enregistrer un paiement
               </Button>
@@ -315,7 +315,7 @@ export default function Payments() {
             >
               Télécharger bulletin
             </Button>
-            {payslip.payments && payslip.payments.length > 0 && (
+            {payslip.payments && payslip.payments.length > 0 && user?.role === 'CAISSIER' && (
               <Button
                 onClick={() => downloadReceipt(payslip.payments[payslip.payments.length - 1].id)}
                 size="sm"
@@ -364,18 +364,22 @@ export default function Payments() {
             </div>
           </div>
           <div className="flex items-end space-x-2">
-            <Button
-              onClick={() => downloadPaymentList(startDate, endDate)}
-              variant="outline"
-            >
-              Liste des paiements PDF
-            </Button>
-            <Button
-              onClick={() => downloadAttendanceList(startDate, endDate)}
-              variant="outline"
-            >
-              Liste d'émargement PDF
-            </Button>
+            {user?.role === 'CAISSIER' && (
+              <>
+                <Button
+                  onClick={() => downloadPaymentList(startDate, endDate)}
+                  variant="outline"
+                >
+                  Liste des paiements PDF
+                </Button>
+                <Button
+                  onClick={() => downloadAttendanceList(startDate, endDate)}
+                  variant="outline"
+                >
+                  Liste d'émargement PDF
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </div>

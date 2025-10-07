@@ -12,14 +12,14 @@ paymentRouter.get("/", roleMiddleware(["SUPER_ADMIN", "ADMIN", "CAISSIER"]), (re
 
 paymentRouter.get("/:id", roleMiddleware(["SUPER_ADMIN", "ADMIN", "CAISSIER"]), (req, res) => paymentController.findById(req, res));
 
-paymentRouter.post("/", roleMiddleware(["SUPER_ADMIN", "ADMIN", "CAISSIER"]), (req, res) => paymentController.create(req, res));
+paymentRouter.post("/", roleMiddleware(["CAISSIER"]), (req, res) => paymentController.create(req, res));
 
-paymentRouter.put("/:id", roleMiddleware(["SUPER_ADMIN", "ADMIN", "CAISSIER"]), (req, res) => paymentController.update(req, res));
+paymentRouter.put("/:id", roleMiddleware(["CAISSIER"]), (req, res) => paymentController.update(req, res));
 
-paymentRouter.delete("/:id", roleMiddleware(["SUPER_ADMIN", "ADMIN"]), (req, res) => paymentController.delete(req, res));
+paymentRouter.delete("/:id", roleMiddleware(["SUPER_ADMIN"]), (req, res) => paymentController.delete(req, res));
 
-paymentRouter.get("/:id/receipt", roleMiddleware(["SUPER_ADMIN", "ADMIN", "CAISSIER"]), (req, res) => paymentController.generateReceipt(req, res));
+paymentRouter.get("/:id/receipt", roleMiddleware(["CAISSIER"]), (req, res) => paymentController.generateReceipt(req, res));
 
-paymentRouter.get("/list/pdf", roleMiddleware(["SUPER_ADMIN", "ADMIN", "CAISSIER"]), (req, res) => paymentController.generatePaymentList(req, res));
+paymentRouter.get("/list/pdf", roleMiddleware(["CAISSIER"]), (req, res) => paymentController.generatePaymentList(req, res));
 
 export { paymentRouter };
