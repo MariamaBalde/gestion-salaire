@@ -110,4 +110,44 @@ export class PaymentController {
       res.status(500).json({ message: error.message });
     }
   }
+
+  // 🔹 Générer et télécharger la liste des paiements PDF par période
+  async generatePaymentList(req: Request, res: Response): Promise<void> {
+    try {
+      const { startDate, endDate, entrepriseId } = req.query;
+      const filters: any = {};
+      const user = req.user as any;
+
+      if (startDate && endDate) {
+        filters.dateRange = {
+          start: new Date(startDate as string),
+          end: new Date(endDate as string)
+        };
+      }
+
+      if (entrepriseId) {
+        filters.entrepriseId = parseInt(entrepriseId as string);
+      } else if (user.role === 'ADMIN' || user.role === 'CAISSIER') {
+        filters.entrepriseId = user.entrepriseId;
+      }
+
+      const payments = await this.paymentService.findAll(filters);
+
+      if (!payments || payments.length === 0) {
+        res.status(404).json({ message: "No payments found for the specified period" });
+        return;
+      }
+
+      const start = startDate ? new Date(startDate as string) : new Date();
+      const end = endDate ? new Date(endDate as string) : new Date();
+
+      const pdfBuffer = await this.pdfService.generatePaymentListPDF(payments as any, start, end);
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename=payment-list-${start.toISOString().split('T')[0]}-to-${end.toISOString().split('T')[0]}.pdf`);
+      res.send(pdfBuffer);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  }
 }

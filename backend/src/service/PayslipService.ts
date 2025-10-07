@@ -28,7 +28,6 @@ export class PayslipService {
     id: number,
     data: Partial<Omit<Payslip, "id" | "createdAt" | "updatedAt">>
   ): Promise<Payslip> {
-    // Check if payslip can be edited (only if payrun is BROUILLON)
     const payslip = await this.payslipRepository.findById(id) as any;
     if (!payslip) {
       throw new Error("Payslip not found");
@@ -36,6 +35,19 @@ export class PayslipService {
 
     if (payslip.payRun.status !== 'BROUILLON') {
       throw new Error("Cannot edit payslip: PayRun is not in draft status");
+    }
+
+    // Si les jours travaillés sont modifiés pour un employé journalier, recalculer le brut
+    if (data.joursTravailles !== undefined && data.joursTravailles !== null && payslip.employee.typeContrat === 'JOURNALIER') {
+      // Validation : les jours travaillés doivent être cohérents avec la période du cycle
+      const maxWorkingDays = this.calculateWorkingDays(payslip.payRun.dateDebut, payslip.payRun.dateFin);
+      if (data.joursTravailles < 0 || data.joursTravailles > maxWorkingDays) {
+        throw new Error(`Les jours travaillés doivent être entre 0 et ${maxWorkingDays} pour cette période`);
+      }
+
+      const newBrut = payslip.employee.tauxSalaire * data.joursTravailles;
+      data.brut = newBrut;
+      data.net = newBrut - (data.deductions || payslip.deductions || 0);
     }
 
     return this.payslipRepository.update(id, data);
@@ -53,5 +65,22 @@ export class PayslipService {
     }
 
     return this.payslipRepository.delete(id);
+  }
+
+  // 🔹 Calculer le nombre de jours ouvrés entre deux dates
+  private calculateWorkingDays(startDate: Date, endDate: Date): number {
+    let workingDays = 0;
+    const currentDate = new Date(startDate);
+
+    while (currentDate <= endDate) {
+      // Considérer comme jour ouvré du lundi au vendredi (0 = dimanche, 6 = samedi)
+      const dayOfWeek = currentDate.getDay();
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        workingDays++;
+      }
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    return workingDays;
   }
 }

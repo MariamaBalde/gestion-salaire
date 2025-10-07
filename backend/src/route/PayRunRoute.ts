@@ -8,9 +8,9 @@ const payRunController = new PayRunController();
 
 payRunRouter.use(authMiddleware);
 
-payRunRouter.get("/", roleMiddleware(["SUPER_ADMIN", "ADMIN"]), (req, res) => payRunController.findAll(req, res));
+payRunRouter.get("/", roleMiddleware(["SUPER_ADMIN", "ADMIN", "CAISSIER"]), (req, res) => payRunController.findAll(req, res));
 
-payRunRouter.get("/:id", roleMiddleware(["SUPER_ADMIN", "ADMIN"]), (req, res) => payRunController.findById(req, res));
+payRunRouter.get("/:id", roleMiddleware(["SUPER_ADMIN", "ADMIN", "CAISSIER"]), (req, res) => payRunController.findById(req, res));
 
 payRunRouter.post("/", roleMiddleware(["SUPER_ADMIN", "ADMIN"]), (req, res) => payRunController.create(req, res));
 

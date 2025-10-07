@@ -21,6 +21,11 @@ export default function Employees() {
   const showEntrepriseColumn = user?.role === 'SUPER_ADMIN' && !entrepriseId;
   const showActionsColumn = !showEntrepriseColumn;
   const [enterpriseName, setEnterpriseName] = useState('');
+  const [filters, setFilters] = useState({
+    actif: '',
+    poste: '',
+    typeContrat: ''
+  });
 
   useEffect(() => {
     fetchEmployees();
@@ -32,10 +37,20 @@ export default function Employees() {
     }
   }, [entrepriseId]);
 
+  useEffect(() => {
+    fetchEmployees();
+  }, [filters]);
+
   const fetchEmployees = async () => {
     try {
-      const params = entrepriseId ? `?entrepriseId=${entrepriseId}` : '';
-      const response = await api.get(`/employees${params}`);
+      const params = new URLSearchParams();
+      if (entrepriseId) params.append('entrepriseId', entrepriseId);
+      if (filters.actif) params.append('actif', filters.actif);
+      if (filters.poste) params.append('poste', filters.poste);
+      if (filters.typeContrat) params.append('typeContrat', filters.typeContrat);
+
+      const queryString = params.toString();
+      const response = await api.get(`/employees${queryString ? `?${queryString}` : ''}`);
       setEmployees(response.data);
     } catch (error) {
       console.error('Error fetching employees:', error);
@@ -64,7 +79,17 @@ export default function Employees() {
       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{employee.typeContrat}</td>
       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">€{employee.tauxSalaire}</td>
       <td className="px-6 py-4 whitespace-nowrap">
-        <Badge variant={employee.actif ? 'active' : 'inactive'}>{employee.actif ? 'Actif' : 'Inactif'}</Badge>
+        <button
+          onClick={() => handleToggleActive(employee)}
+          className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+            employee.actif
+              ? 'bg-green-100 text-green-800 hover:bg-green-200'
+              : 'bg-red-100 text-red-800 hover:bg-red-200'
+          }`}
+          title={employee.actif ? 'Cliquer pour désactiver' : 'Cliquer pour activer'}
+        >
+          {employee.actif ? 'Actif' : 'Inactif'}
+        </button>
       </td>
       {showEntrepriseColumn && (
         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{employee.entreprise?.nom}</td>
@@ -118,6 +143,17 @@ export default function Employees() {
     }
   };
 
+  const handleToggleActive = async (employee) => {
+    try {
+      await api.patch(`/employees/${employee.id}/toggle-active`);
+      setEmployees(employees.map(emp =>
+        emp.id === employee.id ? { ...emp, actif: !emp.actif } : emp
+      ));
+    } catch (error) {
+      console.error('Error toggling employee status:', error);
+    }
+  };
+
   const handleSave = async (employeeData) => {
     try {
       if (editingEmployee) {
@@ -142,6 +178,53 @@ export default function Employees() {
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-medium">Liste des employés</h2>
           {!isSuperAdminView && <Button onClick={handleAdd}>Ajouter un employé</Button>}
+        </div>
+
+        {/* Filters */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Statut</label>
+            <select
+              value={filters.actif}
+              onChange={(e) => setFilters({ ...filters, actif: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="">Tous</option>
+              <option value="true">Actif</option>
+              <option value="false">Inactif</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Poste</label>
+            <input
+              type="text"
+              value={filters.poste}
+              onChange={(e) => setFilters({ ...filters, poste: e.target.value })}
+              placeholder="Rechercher par poste..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Type de contrat</label>
+            <select
+              value={filters.typeContrat}
+              onChange={(e) => setFilters({ ...filters, typeContrat: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="">Tous</option>
+              <option value="JOURNALIER">Journalier</option>
+              <option value="FIXE">Fixe</option>
+              <option value="HONORAIRE">Honoraire</option>
+            </select>
+          </div>
+          <div className="flex items-end">
+            <button
+              onClick={() => setFilters({ actif: '', poste: '', typeContrat: '' })}
+              className="w-full px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors"
+            >
+              Réinitialiser
+            </button>
+          </div>
         </div>
         
         {loading ? (

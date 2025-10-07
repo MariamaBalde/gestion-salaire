@@ -8,6 +8,7 @@ import { entrepriseRouter } from "./route/EntrepriseRoute.js";
 import { payRunRouter } from "./route/PayRunRoute.js";
 import { payslipRouter } from "./route/PayslipRoute.js";
 import { paymentRouter } from "./route/PaymentRoute.js";
+import { documentRouter } from "./route/DocumentRoute.js";
 import { DashboardRoute } from "./route/DashboardRoute.js";
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -32,6 +33,7 @@ app.use("/entreprises", entrepriseRouter);
 app.use("/payruns", payRunRouter);
 app.use("/payslips", payslipRouter);
 app.use("/payments", paymentRouter);
+app.use("/documents", documentRouter);
 app.use("/dashboard", DashboardRoute);
 
 const PORT = process.env.PORT || 3000;

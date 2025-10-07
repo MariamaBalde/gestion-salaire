@@ -79,13 +79,23 @@ export class PayRunService {
   // 🔹 Générer les bulletins automatiquement
   private async generatePayslips(payRunId: number, entrepriseId: number): Promise<void> {
     const employees = await this.employeeRepository.findAll({ entrepriseId, actif: true });
+    const payRun = await this.payRunRepository.findById(payRunId);
+
+    if (!payRun) {
+      throw new Error('PayRun not found');
+    }
 
     for (const employee of employees) {
       // Calculer le brut selon le type de contrat
       let brut = employee.tauxSalaire;
+      let joursTravailles: number | null = null;
+
       if (employee.typeContrat === 'JOURNALIER') {
-        // Pour les journaliers, on pourrait avoir un nombre de jours, mais pour l'instant on prend le taux fixe
-        brut = employee.tauxSalaire; // TODO: ajuster selon nombre de jours travaillés
+        // Pour les journaliers, calculer le nombre de jours travaillés
+        // Par défaut, on prend tous les jours ouvrés du cycle de paie
+        const defaultWorkingDays = this.calculateWorkingDays(payRun.dateDebut, payRun.dateFin);
+        joursTravailles = defaultWorkingDays;
+        brut = employee.tauxSalaire * defaultWorkingDays;
       }
 
       // Créer le bulletin
@@ -93,11 +103,29 @@ export class PayRunService {
         data: {
           payRunId,
           employeeId: employee.id,
+          joursTravailles,
           brut,
           deductions: 0, // TODO: calculer les déductions
           net: brut
         }
       });
     }
+  }
+
+  // 🔹 Calculer le nombre de jours ouvrés entre deux dates
+  private calculateWorkingDays(startDate: Date, endDate: Date): number {
+    let workingDays = 0;
+    const currentDate = new Date(startDate);
+
+    while (currentDate <= endDate) {
+      // Considérer comme jour ouvré du lundi au vendredi (0 = dimanche, 6 = samedi)
+      const dayOfWeek = currentDate.getDay();
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        workingDays++;
+      }
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    return workingDays;
   }
 }

@@ -39,7 +39,7 @@ export class PayRunController {
 
       if (req.query.entrepriseId) {
         filters.entrepriseId = parseInt(req.query.entrepriseId as string);
-      } else if (user.role === 'ADMIN') {
+      } else if (user.role === 'ADMIN' || user.role === 'CAISSIER') {
         filters.entrepriseId = user.entrepriseId;
       }
       // SUPER_ADMIN voit tous
@@ -66,7 +66,7 @@ export class PayRunController {
       }
 
       const user = req.user as any;
-      if (user.role === 'ADMIN' && payRun.entrepriseId !== user.entrepriseId) {
+      if ((user.role === 'ADMIN' || user.role === 'CAISSIER') && payRun.entrepriseId !== user.entrepriseId) {
         res.status(403).json({ message: "Access denied" });
         return;
       }

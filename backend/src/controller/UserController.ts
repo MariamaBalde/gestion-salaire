@@ -60,9 +60,27 @@ export class UserController {
         return;
       }
       const data = req.body;
-      const utilisateur = await this.userService.update(parseInt(id), data);
+      console.log('UserController update - received data:', data);
+      console.log('UserController update - data types:', Object.keys(data).map(key => `${key}: ${typeof data[key]}`));
+
+      // Clean up the data
+      const cleanData: any = {};
+      if (data.nom) cleanData.nom = data.nom;
+      if (data.email) cleanData.email = data.email;
+      if (data.role) cleanData.role = data.role;
+      if (data.actif !== undefined) cleanData.actif = data.actif;
+      if (data.entrepriseId !== undefined && data.entrepriseId !== '') {
+        cleanData.entrepriseId = parseInt(data.entrepriseId);
+      } else if (data.entrepriseId === '') {
+        cleanData.entrepriseId = null;
+      }
+
+      console.log('UserController update - cleaned data:', cleanData);
+
+      const utilisateur = await this.userService.update(parseInt(id), cleanData);
       res.json(utilisateur);
     } catch (error: any) {
+      console.error('UserController update error:', error);
       res.status(500).json({ message: error.message });
     }
   }

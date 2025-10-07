@@ -20,4 +20,6 @@ employeeRouter.delete("/:id", roleMiddleware(["SUPER_ADMIN", "ADMIN"]), (req, re
 
 employeeRouter.patch("/:id/toggle-active", roleMiddleware(["SUPER_ADMIN", "ADMIN"]), (req, res) => employeeController.toggleActive(req, res));
 
+employeeRouter.get("/attendance/pdf", roleMiddleware(["SUPER_ADMIN", "ADMIN"]), (req, res) => employeeController.generateAttendanceList(req, res));
+
 export { employeeRouter };

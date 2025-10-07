@@ -8,7 +8,7 @@ const payslipController = new PayslipController();
 
 payslipRouter.use(authMiddleware);
 
-payslipRouter.get("/", roleMiddleware(["SUPER_ADMIN", "ADMIN"]), (req, res) => payslipController.findAll(req, res));
+payslipRouter.get("/", roleMiddleware(["SUPER_ADMIN", "ADMIN", "CAISSIER"]), (req, res) => payslipController.findAll(req, res));
 
 payslipRouter.get("/:id", roleMiddleware(["SUPER_ADMIN", "ADMIN"]), (req, res) => payslipController.findById(req, res));
 
@@ -17,5 +17,9 @@ payslipRouter.post("/", roleMiddleware(["SUPER_ADMIN", "ADMIN"]), (req, res) => 
 payslipRouter.put("/:id", roleMiddleware(["SUPER_ADMIN", "ADMIN"]), (req, res) => payslipController.update(req, res));
 
 payslipRouter.delete("/:id", roleMiddleware(["SUPER_ADMIN"]), (req, res) => payslipController.delete(req, res));
+
+payslipRouter.get("/:id/pdf", roleMiddleware(["SUPER_ADMIN", "ADMIN", "CAISSIER"]), (req, res) => payslipController.generatePDF(req, res));
+
+payslipRouter.get("/bulk/pdf", roleMiddleware(["SUPER_ADMIN", "ADMIN", "CAISSIER"]), (req, res) => payslipController.generateBulkPDF(req, res));
 
 export { payslipRouter };

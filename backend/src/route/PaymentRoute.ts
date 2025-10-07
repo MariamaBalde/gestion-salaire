@@ -20,4 +20,6 @@ paymentRouter.delete("/:id", roleMiddleware(["SUPER_ADMIN", "ADMIN"]), (req, res
 
 paymentRouter.get("/:id/receipt", roleMiddleware(["SUPER_ADMIN", "ADMIN", "CAISSIER"]), (req, res) => paymentController.generateReceipt(req, res));
 
+paymentRouter.get("/list/pdf", roleMiddleware(["SUPER_ADMIN", "ADMIN", "CAISSIER"]), (req, res) => paymentController.generatePaymentList(req, res));
+
 export { paymentRouter };

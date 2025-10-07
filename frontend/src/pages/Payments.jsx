@@ -4,9 +4,13 @@ import Badge from '../components/Badge';
 import Button from '../components/Button';
 import Modal from '../components/Modal';
 import api from '../api';
+import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
 
 export default function Payments() {
+  const { user } = useAuth();
+  const { showSuccess, showError } = useToast();
   const [payRuns, setPayRuns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -17,6 +21,14 @@ export default function Payments() {
   const [submitting, setSubmitting] = useState(false);
   const [chartData, setChartData] = useState([]);
   const [selectedPayRunId, setSelectedPayRunId] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedPayslipForEdit, setSelectedPayslipForEdit] = useState(null);
+  const [editForm, setEditForm] = useState({
+    joursTravailles: '',
+    deductions: ''
+  });
 
   useEffect(() => {
     fetchPayRuns();
@@ -116,6 +128,120 @@ export default function Payments() {
     }
   };
 
+  const downloadPayslip = async (payslipId) => {
+    try {
+      const response = await api.get(`/payslips/${payslipId}/pdf`, {
+        responseType: 'blob'
+      });
+
+      // Create blob link to download
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `payslip-${payslipId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading payslip:', error);
+    }
+  };
+
+  const downloadBulkPayslips = async (payRunId) => {
+    try {
+      const response = await api.get(`/payslips/bulk/pdf?payRunId=${payRunId}`, {
+        responseType: 'blob'
+      });
+
+      // Create blob link to download
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `payslips-payrun-${payRunId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading bulk payslips:', error);
+    }
+  };
+
+  const downloadPaymentList = async (startDate, endDate) => {
+    try {
+      const params = new URLSearchParams();
+      if (startDate) params.append('startDate', startDate);
+      if (endDate) params.append('endDate', endDate);
+
+      const response = await api.get(`/payments/list/pdf?${params}`, {
+        responseType: 'blob'
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `payment-list-${startDate || 'all'}-to-${endDate || 'all'}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading payment list:', error);
+    }
+  };
+
+  const downloadAttendanceList = async (startDate, endDate) => {
+    try {
+      const params = new URLSearchParams();
+      if (startDate) params.append('startDate', startDate);
+      if (endDate) params.append('endDate', endDate);
+
+      const response = await api.get(`/employees/attendance/pdf?${params}`, {
+        responseType: 'blob'
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `attendance-list-${startDate || 'all'}-to-${endDate || 'all'}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading attendance list:', error);
+    }
+  };
+
+  const openEditModal = (payslip) => {
+    setSelectedPayslipForEdit(payslip);
+    setEditForm({
+      joursTravailles: payslip.joursTravailles?.toString() || '',
+      deductions: payslip.deductions?.toString() || ''
+    });
+    setShowEditModal(true);
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const updateData = {
+        joursTravailles: editForm.joursTravailles ? parseInt(editForm.joursTravailles) : null,
+        deductions: parseFloat(editForm.deductions) || 0
+      };
+
+      await api.put(`/payslips/${selectedPayslipForEdit.id}`, updateData);
+      setShowEditModal(false);
+      setSelectedPayslipForEdit(null);
+      fetchPayRuns(); // Refresh data
+      showSuccess('Bulletin modifié avec succès');
+    } catch (error) {
+      console.error('Error updating payslip:', error);
+      showError('Erreur lors de la modification du bulletin');
+    }
+  };
+
   const getTotalPaid = (payslip) => {
     return payslip.payments?.reduce((sum, payment) => sum + payment.montant, 0) || 0;
   };
@@ -168,11 +294,27 @@ export default function Payments() {
         </td>
         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
           <div className="flex space-x-2">
+            {payslip.payRun?.status === 'BROUILLON' && user?.role !== 'CAISSIER' && (
+              <Button
+                onClick={() => openEditModal(payslip)}
+                size="sm"
+                variant="outline"
+              >
+                Modifier
+              </Button>
+            )}
             {payslip.status !== 'PAYE' && (
               <Button onClick={() => openPaymentModal(payslip)} size="sm">
                 Enregistrer un paiement
               </Button>
             )}
+            <Button
+              onClick={() => downloadPayslip(payslip.id)}
+              size="sm"
+              variant="outline"
+            >
+              Télécharger bulletin
+            </Button>
             {payslip.payments && payslip.payments.length > 0 && (
               <Button
                 onClick={() => downloadReceipt(payslip.payments[payslip.payments.length - 1].id)}
@@ -197,6 +339,46 @@ export default function Payments() {
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Paiements</h1>
+
+      {/* PDF Export Section */}
+      <div className="bg-white p-6 rounded-lg shadow mb-6">
+        <h2 className="text-lg font-medium mb-4">Documents PDF</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Période</label>
+            <div className="flex space-x-2">
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Date début"
+              />
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Date fin"
+              />
+            </div>
+          </div>
+          <div className="flex items-end space-x-2">
+            <Button
+              onClick={() => downloadPaymentList(startDate, endDate)}
+              variant="outline"
+            >
+              Liste des paiements PDF
+            </Button>
+            <Button
+              onClick={() => downloadAttendanceList(startDate, endDate)}
+              variant="outline"
+            >
+              Liste d'émargement PDF
+            </Button>
+          </div>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         <div className="lg:col-span-2 bg-white p-6 rounded-lg shadow">
@@ -237,8 +419,19 @@ export default function Payments() {
                       </span>
                     </p>
                   </div>
-                  <div className="text-sm text-gray-500">
-                    {payRun.payslips?.length || 0} employé(s)
+                  <div className="flex items-center space-x-4">
+                    <div className="text-sm text-gray-500">
+                      {payRun.payslips?.length || 0} employé(s)
+                    </div>
+                    {payRun.payslips && payRun.payslips.length > 0 && (
+                      <Button
+                        onClick={() => downloadBulkPayslips(payRun.id)}
+                        size="sm"
+                        variant="outline"
+                      >
+                        Télécharger tous les bulletins
+                      </Button>
+                    )}
                   </div>
                 </div>
 
@@ -358,6 +551,79 @@ export default function Payments() {
             </Button>
             <Button type="submit" disabled={submitting}>
               {submitting ? 'Enregistrement...' : 'Enregistrer'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Edit Payslip Modal */}
+      <Modal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        title="Modifier le bulletin de paie"
+      >
+        {selectedPayslipForEdit && (
+          <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+            <h3 className="font-medium">{selectedPayslipForEdit.employee?.nomComplet}</h3>
+            <p className="text-sm text-gray-600">
+              Poste: {selectedPayslipForEdit.employee?.poste}
+            </p>
+            <p className="text-sm text-gray-600">
+              Type de contrat: {selectedPayslipForEdit.employee?.typeContrat}
+            </p>
+            <p className="text-sm text-gray-600">
+              Taux salaire: {selectedPayslipForEdit.employee?.tauxSalaire} {selectedPayslipForEdit.payRun?.entreprise?.devise}
+            </p>
+          </div>
+        )}
+
+        <form onSubmit={handleEditSubmit}>
+          {selectedPayslipForEdit?.employee?.typeContrat === 'JOURNALIER' && (
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Jours travaillés
+              </label>
+              <input
+                type="number"
+                min="0"
+                max="31"
+                value={editForm.joursTravailles}
+                onChange={(e) => setEditForm({ ...editForm, joursTravailles: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Nombre de jours travaillés"
+                required
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Le salaire brut sera recalculé automatiquement : {editForm.joursTravailles ? (parseInt(editForm.joursTravailles) * (selectedPayslipForEdit?.employee?.tauxSalaire || 0)) : 0} {selectedPayslipForEdit?.payRun?.entreprise?.devise}
+              </p>
+            </div>
+          )}
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Déductions
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={editForm.deductions}
+              onChange={(e) => setEditForm({ ...editForm, deductions: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+              placeholder="Montant des déductions"
+            />
+          </div>
+
+          <div className="flex justify-end space-x-3">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setShowEditModal(false)}
+            >
+              Annuler
+            </Button>
+            <Button type="submit">
+              Enregistrer les modifications
             </Button>
           </div>
         </form>
