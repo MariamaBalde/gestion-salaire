@@ -10,6 +10,7 @@ import { payslipRouter } from "./route/PayslipRoute.js";
 import { paymentRouter } from "./route/PaymentRoute.js";
 import { documentRouter } from "./route/DocumentRoute.js";
 import { DashboardRoute } from "./route/DashboardRoute.js";
+import { activityRouter } from "./route/ActivityRoute.js";
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -35,6 +36,7 @@ app.use("/payslips", payslipRouter);
 app.use("/payments", paymentRouter);
 app.use("/documents", documentRouter);
 app.use("/dashboard", DashboardRoute);
+app.use("/activities", activityRouter);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

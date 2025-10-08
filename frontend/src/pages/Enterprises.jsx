@@ -34,78 +34,20 @@ export default function Enterprises() {
 
   const fetchEnterprises = async () => {
     try {
+      console.log('Fetching enterprises...');
       const response = await api.get('/entreprises', {
         params: { createdById: user?.id }
       });
+      console.log('Enterprises response:', response.data);
       setEnterprises(response.data);
     } catch (error) {
       console.error('Error fetching enterprises:', error);
+      if (error.response) {
+        console.error('Error response:', error.response.data);
+      }
     }
   };
 
-  const headers = ['Nom', 'Adresse', 'Devise', 'Type de période', 'Actions'];
-
-  const renderRow = (enterprise) => (
-  <tr key={enterprise.id}>
-    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-      <div className="flex items-center space-x-3">
-        {enterprise.logo ? (
-          <img 
-            src={`http://localhost:3000/${enterprise.logo}`} 
-            alt={`Logo ${enterprise.nom}`} 
-            className="h-8 w-8 rounded-full object-cover"
-            onError={(e) => {
-              e.target.onerror = null;
-              e.target.style.display = 'none';
-              const fallback = document.createElement('div');
-              fallback.className = 'h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center';
-              fallback.innerHTML = `<span class="text-gray-500 text-sm">${enterprise.nom.charAt(0)}</span>`;
-              e.target.parentNode.insertBefore(fallback, e.target);
-            }}
-          />
-        ) : (
-          <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
-            <span className="text-gray-500 text-sm">{enterprise.nom.charAt(0)}</span>
-          </div>
-        )}
-        <span>{enterprise.nom}</span>
-      </div>
-    </td>
-    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{enterprise.adresse}</td>
-    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{enterprise.devise}</td>
-    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{enterprise.typePeriode}</td>
-    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-      <button
-        onClick={() => handleViewEmployees(enterprise)}
-        className="text-blue-600 hover:text-blue-900 mr-4"
-        title="Voir les détails"
-      >
-        <Eye size={20} />
-      </button>
-      <button
-        onClick={() => handleCreateAdmin(enterprise)}
-        className="text-primary hover:text-primary-light mr-4"
-        title="Créer un administrateur"
-      >
-        <UserPlus size={20} />
-      </button>
-      <button
-        onClick={() => handleEdit(enterprise)}
-        className="text-yellow-600 hover:text-yellow-900 mr-4"
-        title="Modifier l'entreprise"
-      >
-        <Edit size={20} />
-      </button>
-      <button
-        onClick={() => handleDelete(enterprise.id)}
-        className="text-red-600 hover:text-red-900"
-        title="Supprimer l'entreprise"
-      >
-        <Trash2 size={20} />
-      </button>
-    </td>
-  </tr>
-);
   const handleAdd = () => {
     setEditingEnterprise(null);
     setIsModalOpen(true);
@@ -208,14 +150,196 @@ export default function Enterprises() {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Gestion des Entreprises</h1>
-      <div className="bg-white p-6 rounded-lg shadow">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-medium">Liste des entreprises</h2>
-          <Button onClick={handleAdd}>Ajouter une entreprise</Button>
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-3xl font-bold" style={{ color: '#111827' }}>Gestion des Entreprises</h1>
+          <p className="mt-2" style={{ color: '#6B7280' }}>Gérez toutes les entreprises de votre plateforme</p>
         </div>
-        <Table headers={headers} data={enterprises} renderRow={renderRow} />
+        <Button
+          onClick={handleAdd}
+          className="px-6 py-3 rounded-xl font-semibold text-white transition-all duration-300 hover:scale-105"
+          style={{ backgroundColor: '#3B82F6' }}
+        >
+          <UserPlus className="h-5 w-5 mr-2" />
+          Ajouter une entreprise
+        </Button>
       </div>
+
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="bg-white rounded-2xl shadow-lg p-6" style={{ borderColor: '#E5E7EB' }}>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium" style={{ color: '#6B7280' }}>Total Entreprises</p>
+              <p className="text-3xl font-bold" style={{ color: '#111827' }}>{enterprises.length}</p>
+            </div>
+            <div className="p-3 rounded-xl" style={{ backgroundColor: '#F3F4F6' }}>
+              <UserPlus className="h-6 w-6" style={{ color: '#8B5CF6' }} />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-lg p-6" style={{ borderColor: '#E5E7EB' }}>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium" style={{ color: '#6B7280' }}>Entreprises Actives</p>
+              <p className="text-3xl font-bold" style={{ color: '#111827' }}>{enterprises.length}</p>
+            </div>
+            <div className="p-3 rounded-xl" style={{ backgroundColor: '#F3F4F6' }}>
+              <Eye className="h-6 w-6" style={{ color: '#10B981' }} />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-lg p-6" style={{ borderColor: '#E5E7EB' }}>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium" style={{ color: '#6B7280' }}>Total Employés</p>
+              <p className="text-3xl font-bold" style={{ color: '#111827' }}>
+                {enterprises.reduce((total, ent) => total + (ent.employes?.length || 0), 0)}
+              </p>
+            </div>
+            <div className="p-3 rounded-xl" style={{ backgroundColor: '#F3F4F6' }}>
+              <Eye className="h-6 w-6" style={{ color: '#EF4444' }} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Enterprises Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {enterprises.map((enterprise) => (
+          <div
+            key={enterprise.id}
+            className="group relative overflow-hidden bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer border"
+            style={{ borderColor: '#E5E7EB' }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-50 to-blue-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+
+            <div className="relative p-6">
+              {/* Header with Logo and Actions */}
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center space-x-3">
+                  {enterprise.logo ? (
+                    <img
+                      src={`http://localhost:3000/${enterprise.logo}`}
+                      alt={`Logo ${enterprise.nom}`}
+                      className="h-12 w-12 rounded-xl object-cover shadow-sm"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.style.display = 'none';
+                        const fallback = e.target.parentNode.querySelector('.fallback-avatar');
+                        if (fallback) fallback.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <div className={`h-12 w-12 rounded-xl flex items-center justify-center shadow-sm fallback-avatar ${
+                    enterprise.logo ? 'hidden' : 'flex'
+                  }`} style={{ backgroundColor: '#F3F4F6' }}>
+                    <span className="text-lg font-semibold" style={{ color: '#8B5CF6' }}>
+                      {enterprise.nom.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold" style={{ color: '#111827' }}>{enterprise.nom}</h3>
+                    <p className="text-sm" style={{ color: '#6B7280' }}>{enterprise.adresse}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Enterprise Details */}
+              <div className="space-y-3 mb-6">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium" style={{ color: '#6B7280' }}>Devise:</span>
+                  <span className="px-3 py-1 rounded-full text-sm font-semibold" style={{
+                    backgroundColor: '#F3F4F6',
+                    color: '#111827'
+                  }}>
+                    {enterprise.devise}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium" style={{ color: '#6B7280' }}>Période:</span>
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                    enterprise.typePeriode === 'MENSUELLE' ? 'bg-green-100 text-green-700' :
+                    enterprise.typePeriode === 'HEBDOMADAIRE' ? 'bg-blue-100 text-blue-700' :
+                    'bg-gray-100 text-gray-700'
+                  }`}>
+                    {enterprise.typePeriode}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium" style={{ color: '#6B7280' }}>Employés:</span>
+                  <span className="text-sm font-semibold" style={{ color: '#111827' }}>
+                    {enterprise.employes?.length || 0}
+                  </span>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-between pt-4 border-t" style={{ borderColor: '#E5E7EB' }}>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => handleViewEmployees(enterprise)}
+                    className="p-2 rounded-lg transition-colors hover:bg-gray-100"
+                    style={{ color: '#3B82F6' }}
+                    title="Voir les employés"
+                  >
+                    <Eye size={18} />
+                  </button>
+                  <button
+                    onClick={() => handleCreateAdmin(enterprise)}
+                    className="p-2 rounded-lg transition-colors hover:bg-gray-100"
+                    style={{ color: '#8B5CF6' }}
+                    title="Créer administrateur"
+                  >
+                    <UserPlus size={18} />
+                  </button>
+                </div>
+
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => handleEdit(enterprise)}
+                    className="p-2 rounded-lg transition-colors hover:bg-gray-100"
+                    style={{ color: '#F59E0B' }}
+                    title="Modifier"
+                  >
+                    <Edit size={18} />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(enterprise.id)}
+                    className="p-2 rounded-lg transition-colors hover:bg-red-100"
+                    style={{ color: '#EF4444' }}
+                    title="Supprimer"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Empty State */}
+      {enterprises.length === 0 && (
+        <div className="text-center py-12">
+          <div className="w-24 h-24 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ backgroundColor: '#F3F4F6' }}>
+            <UserPlus className="h-12 w-12" style={{ color: '#8B5CF6' }} />
+          </div>
+          <h3 className="text-lg font-semibold mb-2" style={{ color: '#111827' }}>Aucune entreprise</h3>
+          <p className="text-sm mb-6" style={{ color: '#6B7280' }}>Commencez par créer votre première entreprise</p>
+          <Button
+            onClick={handleAdd}
+            className="px-6 py-3 rounded-xl font-semibold text-white"
+            style={{ backgroundColor: '#3B82F6' }}
+          >
+            Créer une entreprise
+          </Button>
+        </div>
+      )}
 
       <Modal
         isOpen={isModalOpen}

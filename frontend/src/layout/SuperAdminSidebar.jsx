@@ -1,36 +1,26 @@
 import { Link, useLocation } from "react-router-dom";
 import {
   Home,
-  Users,
-  UserCheck,
   Building,
-  Calendar,
-  CreditCard,
+  UserCheck,
+  Users,
+  BarChart3,
   Settings,
+  LogOut,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-
-const baseMenuItems = [
-  { path: "/dashboard", label: "Dashboard", icon: Home },
-  { path: "/employees", label: "Employés", icon: Users },
-  { path: "/payruns", label: "Cycles de paie", icon: Calendar },
-  { path: "/payments", label: "Paiements", icon: CreditCard },
-  { path: "/settings", label: "Paramètres", icon: Settings },
-];
 
 const superAdminMenuItems = [
   { path: "/dashboard", label: "Dashboard", icon: Home },
   { path: "/enterprises", label: "Entreprises", icon: Building },
   { path: "/users", label: "Utilisateurs", icon: UserCheck },
   { path: "/employees", label: "Employés", icon: Users },
+  { path: "/settings", label: "Paramètres", icon: Settings },
 ];
 
-export default function Sidebar() {
+export default function SuperAdminSidebar() {
   const location = useLocation();
-  const { user, logout } = useAuth();
-
-  const menuItems =
-    user?.role === "SUPER_ADMIN" ? [...superAdminMenuItems] : baseMenuItems;
+  const { logout } = useAuth();
 
   const handleLogout = () => {
     logout();
@@ -39,18 +29,11 @@ export default function Sidebar() {
   return (
     <div className="h-full w-64 fixed left-0 top-0 z-50" style={{ backgroundColor: '#111827' }}>
       <div className="p-6">
-        <div className="flex items-center space-x-2">
-          {user?.role !== 'SUPER_ADMIN' && user?.entreprise?.logo && (
-            <img src={`http://localhost:3000/${user.entreprise.logo}`} alt="Logo" className="h-8 w-8 rounded" />
-          )}
-          <h1 className="text-white text-xl font-bold">
-            {user?.role === 'SUPER_ADMIN' ? 'PayrollPro' : user?.entreprise?.nom || 'Entreprise'}
-          </h1>
-        </div>
+        <h1 className="text-white text-xl font-bold">PayrollPro</h1>
       </div>
       <nav className="mt-6">
         <ul>
-          {menuItems.map((item) => {
+          {superAdminMenuItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
             return (
@@ -76,7 +59,7 @@ export default function Sidebar() {
             onClick={handleLogout}
             className="w-full flex items-center px-6 py-3 text-left text-white/80 hover:bg-gray-800 hover:text-white transition-colors"
           >
-            <Settings className="mr-3 h-5 w-5" />
+            <LogOut className="mr-3 h-5 w-5" />
             Déconnexion
           </button>
         </div>

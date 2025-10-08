@@ -40,7 +40,10 @@ export class EntrepriseService {
     createdById?: number;
     id?: number;
   }): Promise<Entreprise[]> {
-    return this.entrepriseRepository.findAll(filters);
+    console.log('EntrepriseService - findAll - filters:', filters);
+    const result = await this.entrepriseRepository.findAll(filters);
+    console.log('EntrepriseService - findAll - result:', result);
+    return result;
   }
 
   async update(id: number, data: EntrepriseUpdateInput): Promise<Entreprise> {

@@ -33,20 +33,27 @@ export class EntrepriseController {
     try {
       const { nom } = req.query;
       const filters: any = {};
+      const user = req.user as any;
+
+      console.log('EntrepriseController - findAll - user:', user);
+      console.log('EntrepriseController - findAll - query:', req.query);
 
       if (nom) {
         filters.nom = nom as string;
       }
 
-      const user = req.user as any;
-      if (user.role === 'ADMIN') {
+      // Modification: Ne pas filtrer pour SUPER_ADMIN
+      if (user?.role === 'ADMIN') {
         filters.id = user.entrepriseId;
+      } else if (user?.role === 'SUPER_ADMIN' && user?.createdById) {
+        filters.createdById = user.id;
       }
-      // SUPER_ADMIN sees all enterprises without filter
 
+      console.log('EntrepriseController - findAll - final filters:', filters);
       const entreprises = await this.entrepriseService.findAll(filters);
       res.json(entreprises);
     } catch (error: any) {
+      console.error('EntrepriseController - findAll - error:', error);
       res.status(500).json({ message: error.message });
     }
   }

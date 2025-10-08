@@ -6,7 +6,7 @@ export default function Header() {
 
   return (
     <header className="bg-white shadow-sm border-b">
-      <div className="flex justify-between items-center px-6 py-4">
+      <div className="flex justify-between items-center pl-64 pr-6 py-4">
         <div>
           <h2 className="text-lg font-semibold text-gray-900">
             {user?.role === 'SUPER_ADMIN' ? 'Super Admin Panel' : (user?.entreprise?.nom || 'Entreprise ABC')}

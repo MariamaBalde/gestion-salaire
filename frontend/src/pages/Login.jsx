@@ -68,6 +68,7 @@ export default function Login() {
                   id="email"
                   name="email"
                   type="email"
+                  autoComplete="email"
                   className={`pl-10 w-full px-3 py-2.5 border rounded-xl focus:ring-[#4263EB] focus:border-[#4263EB] text-sm ${
                     errors.email ? 'border-red-500' : 'border-gray-200'
                   }`}

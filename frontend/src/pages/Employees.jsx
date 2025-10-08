@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import Table from '../components/Table';
 import Badge from '../components/Badge';
 import Button from '../components/Button';
 import Modal from '../components/Modal';
 import api from '../api';
 import { useAuth } from '../context/AuthContext';
+import { UserPlus, Eye, Edit, Trash2, Briefcase, DollarSign, Building } from 'lucide-react';
 
 export default function Employees() {
   const { user } = useAuth();
@@ -19,7 +19,6 @@ export default function Employees() {
   const [viewingEmployee, setViewingEmployee] = useState(null);
   const isSuperAdminView = user?.role === 'SUPER_ADMIN' && entrepriseId;
   const showEntrepriseColumn = user?.role === 'SUPER_ADMIN' && !entrepriseId;
-  const showActionsColumn = !showEntrepriseColumn;
   const [enterpriseName, setEnterpriseName] = useState('');
   const [filters, setFilters] = useState({
     actif: '',
@@ -27,25 +26,11 @@ export default function Employees() {
     typeContrat: ''
   });
 
-  useEffect(() => {
-    fetchEmployees();
-  }, []);
-
-  useEffect(() => {
-    if (entrepriseId) {
-      fetchEnterprise();
-    }
-  }, [entrepriseId]);
-
-  useEffect(() => {
-    fetchEmployees();
-  }, [filters]);
-
-  const fetchEmployees = async () => {
+  const fetchEmployees = useCallback(async () => {
     try {
       const params = new URLSearchParams();
       if (entrepriseId) params.append('entrepriseId', entrepriseId);
-      if (filters.actif) params.append('actif', filters.actif);
+      if (filters.actif) params.append('actif', filters.actif === 'true');
       if (filters.poste) params.append('poste', filters.poste);
       if (filters.typeContrat) params.append('typeContrat', filters.typeContrat);
 
@@ -57,67 +42,30 @@ export default function Employees() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [entrepriseId, filters.actif, filters.poste, filters.typeContrat]);
 
-  const fetchEnterprise = async () => {
+  const fetchEnterprise = useCallback(async () => {
     try {
       const response = await api.get(`/entreprises/${entrepriseId}`);
       setEnterpriseName(response.data.nom);
     } catch (error) {
       console.error('Error fetching enterprise:', error);
     }
-  };
+  }, [entrepriseId]);
 
-  const headers = ['Nom complet', 'Poste', 'Contrat', 'Salaire', 'Statut'];
-  if (showEntrepriseColumn) headers.push('Entreprise');
-  if (showActionsColumn) headers.push('Actions');
+  useEffect(() => {
+    fetchEmployees();
+  }, [fetchEmployees]);
 
-  const renderRow = (employee) => (
-    <tr key={employee.id}>
-      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{employee.nomComplet}</td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{employee.poste}</td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{employee.typeContrat}</td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">€{employee.tauxSalaire}</td>
-      <td className="px-6 py-4 whitespace-nowrap">
-        <button
-          onClick={() => handleToggleActive(employee)}
-          className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-            employee.actif
-              ? 'bg-green-100 text-green-800 hover:bg-green-200'
-              : 'bg-red-100 text-red-800 hover:bg-red-200'
-          }`}
-          title={employee.actif ? 'Cliquer pour désactiver' : 'Cliquer pour activer'}
-        >
-          {employee.actif ? 'Actif' : 'Inactif'}
-        </button>
-      </td>
-      {showEntrepriseColumn && (
-        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{employee.entreprise?.nom}</td>
-      )}
-      {showActionsColumn && (
-        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-          <button
-            onClick={() => handleView(employee)}
-            className="text-blue-600 hover:text-blue-900 mr-2"
-          >
-            Détails
-          </button>
-          <button
-            onClick={() => handleEdit(employee)}
-            className="text-primary hover:text-primary-light mr-2"
-          >
-            Éditer
-          </button>
-          <button
-            onClick={() => handleDelete(employee.id)}
-            className="text-red-600 hover:text-red-900"
-          >
-            Supprimer
-          </button>
-        </td>
-      )}
-    </tr>
-  );
+  useEffect(() => {
+    if (entrepriseId) {
+      fetchEnterprise();
+    }
+  }, [entrepriseId, fetchEnterprise]);
+
+  useEffect(() => {
+    fetchEmployees();
+  }, [fetchEmployees]);
 
   const handleAdd = () => {
     setEditingEmployee(null);
@@ -171,23 +119,94 @@ export default function Employees() {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">
-        {isSuperAdminView ? `Employés de l'entreprise ${enterpriseName}` : user?.role === 'SUPER_ADMIN' ? 'Tous les Employés' : 'Gestion des Employés'}
-      </h1>
-      <div className="bg-white p-6 rounded-lg shadow">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-medium">Liste des employés</h2>
-          {!isSuperAdminView && <Button onClick={handleAdd}>Ajouter un employé</Button>}
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-3xl font-bold" style={{ color: '#111827' }}>
+            {isSuperAdminView ? `Employés de ${enterpriseName}` : user?.role === 'SUPER_ADMIN' ? 'Tous les Employés' : 'Gestion des Employés'}
+          </h1>
+          <p className="mt-2" style={{ color: '#6B7280' }}>
+            Gérez les employés {isSuperAdminView ? `de ${enterpriseName}` : 'de votre plateforme'}
+          </p>
+        </div>
+        {!isSuperAdminView && (
+          <Button
+            onClick={handleAdd}
+            className="px-6 py-3 rounded-xl font-semibold text-white transition-all duration-300 hover:scale-105"
+            style={{ backgroundColor: '#3B82F6' }}
+          >
+            <UserPlus className="h-5 w-5 mr-2" />
+            Ajouter un employé
+          </Button>
+        )}
+      </div>
+
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="bg-white rounded-2xl shadow-lg p-6" style={{ borderColor: '#E5E7EB' }}>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium" style={{ color: '#6B7280' }}>Total Employés</p>
+              <p className="text-3xl font-bold" style={{ color: '#111827' }}>{employees.length}</p>
+            </div>
+            <div className="p-3 rounded-xl" style={{ backgroundColor: '#F3F4F6' }}>
+              <UserPlus className="h-6 w-6" style={{ color: '#8B5CF6' }} />
+            </div>
+          </div>
         </div>
 
-        {/* Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
+        <div className="bg-white rounded-2xl shadow-lg p-6" style={{ borderColor: '#E5E7EB' }}>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium" style={{ color: '#6B7280' }}>Employés Actifs</p>
+              <p className="text-3xl font-bold" style={{ color: '#111827' }}>
+                {employees.filter(emp => emp.actif).length}
+              </p>
+            </div>
+            <div className="p-3 rounded-xl" style={{ backgroundColor: '#F3F4F6' }}>
+              <Eye className="h-6 w-6" style={{ color: '#10B981' }} />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-lg p-6" style={{ borderColor: '#E5E7EB' }}>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium" style={{ color: '#6B7280' }}>Contrats Fixes</p>
+              <p className="text-3xl font-bold" style={{ color: '#111827' }}>
+                {employees.filter(emp => emp.typeContrat === 'FIXE').length}
+              </p>
+            </div>
+            <div className="p-3 rounded-xl" style={{ backgroundColor: '#F3F4F6' }}>
+              <Briefcase className="h-6 w-6" style={{ color: '#EF4444' }} />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-lg p-6" style={{ borderColor: '#E5E7EB' }}>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium" style={{ color: '#6B7280' }}>Salaire Moyen</p>
+              <p className="text-3xl font-bold" style={{ color: '#111827' }}>
+                {employees.length > 0 ? Math.round(employees.reduce((sum, emp) => sum + emp.tauxSalaire, 0) / employees.length) : 0}€
+              </p>
+            </div>
+            <div className="p-3 rounded-xl" style={{ backgroundColor: '#F3F4F6' }}>
+              <DollarSign className="h-6 w-6" style={{ color: '#3B82F6' }} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="bg-white rounded-2xl shadow-lg p-6 mb-6" style={{ borderColor: '#E5E7EB' }}>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Statut</label>
+            <label className="block text-sm font-semibold mb-2" style={{ color: '#111827' }}>Statut</label>
             <select
               value={filters.actif}
               onChange={(e) => setFilters({ ...filters, actif: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:border-transparent transition-colors"
+              style={{ borderColor: '#E5E7EB', '--tw-ring-color': '#3B82F6' }}
             >
               <option value="">Tous</option>
               <option value="true">Actif</option>
@@ -195,21 +214,23 @@ export default function Employees() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Poste</label>
+            <label className="block text-sm font-semibold mb-2" style={{ color: '#111827' }}>Poste</label>
             <input
               type="text"
               value={filters.poste}
               onChange={(e) => setFilters({ ...filters, poste: e.target.value })}
               placeholder="Rechercher par poste..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:border-transparent transition-colors"
+              style={{ borderColor: '#E5E7EB', '--tw-ring-color': '#3B82F6' }}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Type de contrat</label>
+            <label className="block text-sm font-semibold mb-2" style={{ color: '#111827' }}>Type de contrat</label>
             <select
               value={filters.typeContrat}
               onChange={(e) => setFilters({ ...filters, typeContrat: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:border-transparent transition-colors"
+              style={{ borderColor: '#E5E7EB', '--tw-ring-color': '#3B82F6' }}
             >
               <option value="">Tous</option>
               <option value="JOURNALIER">Journalier</option>
@@ -220,21 +241,161 @@ export default function Employees() {
           <div className="flex items-end">
             <button
               onClick={() => setFilters({ actif: '', poste: '', typeContrat: '' })}
-              className="w-full px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors"
+              className="w-full px-4 py-3 rounded-xl font-semibold text-white transition-all duration-300 hover:scale-105"
+              style={{ backgroundColor: '#6B7280' }}
             >
               Réinitialiser
             </button>
           </div>
         </div>
-        
-        {loading ? (
-          <div className="text-center py-8">
-            <p className="text-gray-500">Chargement...</p>
-          </div>
-        ) : (
-          <Table headers={headers} data={employees} renderRow={renderRow} />
-        )}
       </div>
+
+      {/* Employees Cards Grid */}
+      {loading ? (
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: '#3B82F6' }}></div>
+          <p style={{ color: '#6B7280' }}>Chargement des employés...</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {employees.map((employee) => (
+            <div
+              key={employee.id}
+              className="group relative overflow-hidden bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer border"
+              style={{ borderColor: '#E5E7EB' }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-green-50 to-blue-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+
+              <div className="relative p-6">
+                {/* Header with Avatar and Status */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm" style={{ backgroundColor: '#F3F4F6' }}>
+                      <span className="text-lg font-semibold" style={{ color: '#8B5CF6' }}>
+                        {employee.nomComplet.split(' ').map(n => n.charAt(0)).join('').toUpperCase()}
+                      </span>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold" style={{ color: '#111827' }}>{employee.nomComplet}</h3>
+                      <p className="text-sm" style={{ color: '#6B7280' }}>{employee.poste}</p>
+                    </div>
+                  </div>
+                  <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                    employee.actif ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                  }`}>
+                    {employee.actif ? 'Actif' : 'Inactif'}
+                  </div>
+                </div>
+
+                {/* Employee Details */}
+                <div className="space-y-3 mb-6">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium" style={{ color: '#6B7280' }}>Contrat:</span>
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                      employee.typeContrat === 'FIXE' ? 'bg-blue-100 text-blue-700' :
+                      employee.typeContrat === 'JOURNALIER' ? 'bg-green-100 text-green-700' :
+                      'bg-purple-100 text-purple-700'
+                    }`}>
+                      {employee.typeContrat}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium" style={{ color: '#6B7280' }}>Salaire:</span>
+                    <span className="text-sm font-semibold px-3 py-1 rounded-full" style={{
+                      backgroundColor: '#F3F4F6',
+                      color: '#111827'
+                    }}>
+                      {employee.tauxSalaire}€
+                    </span>
+                  </div>
+
+                  {showEntrepriseColumn && employee.entreprise && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium" style={{ color: '#6B7280' }}>Entreprise:</span>
+                      <span className="text-sm font-semibold px-3 py-1 rounded-full" style={{
+                        backgroundColor: '#F3F4F6',
+                        color: '#111827'
+                      }}>
+                        {employee.entreprise.nom}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex items-center justify-between pt-4 border-t" style={{ borderColor: '#E5E7EB' }}>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => handleView(employee)}
+                      className="p-2 rounded-lg transition-colors hover:bg-gray-100"
+                      style={{ color: '#3B82F6' }}
+                      title="Voir les détails"
+                    >
+                      <Eye size={18} />
+                    </button>
+                    {!isSuperAdminView && (
+                      <button
+                        onClick={() => handleEdit(employee)}
+                        className="p-2 rounded-lg transition-colors hover:bg-gray-100"
+                        style={{ color: '#F59E0B' }}
+                        title="Modifier"
+                      >
+                        <Edit size={18} />
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => handleToggleActive(employee)}
+                      className={`p-2 rounded-lg transition-colors ${
+                        employee.actif ? 'hover:bg-green-100' : 'hover:bg-red-100'
+                      }`}
+                      style={{ color: employee.actif ? '#10B981' : '#EF4444' }}
+                      title={employee.actif ? 'Désactiver' : 'Activer'}
+                    >
+                      <div className={`w-2 h-2 rounded-full ${employee.actif ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                    </button>
+                    {!isSuperAdminView && (
+                      <button
+                        onClick={() => handleDelete(employee.id)}
+                        className="p-2 rounded-lg transition-colors hover:bg-red-100"
+                        style={{ color: '#EF4444' }}
+                        title="Supprimer"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Empty State */}
+      {!loading && employees.length === 0 && (
+        <div className="text-center py-12">
+          <div className="w-24 h-24 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ backgroundColor: '#F3F4F6' }}>
+            <UserPlus className="h-12 w-12" style={{ color: '#8B5CF6' }} />
+          </div>
+          <h3 className="text-lg font-semibold mb-2" style={{ color: '#111827' }}>Aucun employé</h3>
+          <p className="text-sm mb-6" style={{ color: '#6B7280' }}>
+            {isSuperAdminView ? `Aucun employé dans ${enterpriseName}` : 'Commencez par créer votre premier employé'}
+          </p>
+          {!isSuperAdminView && (
+            <Button
+              onClick={handleAdd}
+              className="px-6 py-3 rounded-xl font-semibold text-white"
+              style={{ backgroundColor: '#3B82F6' }}
+            >
+              Créer un employé
+            </Button>
+          )}
+        </div>
+      )}
 
       {!isSuperAdminView && (
         <Modal
@@ -321,7 +482,7 @@ function EmployeeForm({ employee, onSave, onCancel, user }) {
           type="number"
           step="0.01"
           value={formData.tauxSalaire}
-          onChange={(e) => setFormData({ ...formData, tauxSalaire: parseFloat(e.target.value) })}
+          onChange={(e) => setFormData({ ...formData, tauxSalaire: parseFloat(e.target.value) || 0 })}
           className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
           required
         />
